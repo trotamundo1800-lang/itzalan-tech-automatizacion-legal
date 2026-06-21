@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: itzalan
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: itzalan
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  qdrant:
+    image: qdrant/qdrant:v1.4.0
+    ports:
+      - 6333:6333
+    command: ["--telemetry", "off"]
+
+volumes:
+  postgres-data:
+    driver: local
