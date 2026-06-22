@@ -1,14 +1,30 @@
-node_modules
-.DS_Store
+# Secrets
+.secrets
 .env
 .env.*
 .env.local
 .env.production
-.secrets
-dist
-build
-coverage
+
+# Next.js
+.next/
+
+# Expo
+.expo/
+
+# Build outputs
+build/
+dist/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+
+# Misc
+.DS_Store
 .idea
 .vscode
-npm-debug.log*
 pnpm-lock.yaml
