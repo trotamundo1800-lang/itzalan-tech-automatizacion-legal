@@ -2,12 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { apiFetch } from '../lib/api';
 
 type Profile = {
   email: string;
   name: string;
   role: string;
+  subscription?: {
+    isActive: boolean;
+    subscription: {
+      plan: {
+        name: string;
+      };
+    } | null;
+  };
 };
 
 export default function DashboardPage() {
@@ -98,6 +107,9 @@ export default function DashboardPage() {
                 <p className="mt-2 font-semibold text-slate-900">{profile.name}</p>
                 <p className="text-sm text-slate-600">{profile.email}</p>
                 <p className="text-sm text-slate-600">Rol: {profile.role}</p>
+                <p className="text-sm text-slate-600">
+                  Suscripción: {profile.subscription?.isActive ? profile.subscription.subscription?.plan.name || 'Activa' : 'Inactiva'}
+                </p>
               </div>
             ) : (
               <p className="text-slate-500">Cargando perfil...</p>
@@ -137,6 +149,17 @@ export default function DashboardPage() {
               <li>Nuevo documento cargado al expediente 0912</li>
             </ul>
           </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Link href="/suscripciones" className="rounded-3xl bg-white p-6 shadow-sm transition hover:shadow-md">
+            <h2 className="text-xl font-semibold text-slate-900">Suscripciones y pagos</h2>
+            <p className="mt-2 text-sm text-slate-600">Activa Plan Básico, Profesional o Empresarial con Stripe/PayPal.</p>
+          </Link>
+          <Link href="/admin/planes" className="rounded-3xl bg-white p-6 shadow-sm transition hover:shadow-md">
+            <h2 className="text-xl font-semibold text-slate-900">Panel admin de planes</h2>
+            <p className="mt-2 text-sm text-slate-600">Gestiona catálogo de planes y estados de suscripción.</p>
+          </Link>
         </div>
       </div>
     </section>

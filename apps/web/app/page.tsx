@@ -33,6 +33,18 @@ const features = [
     eyebrow: 'Asistente legal',
   },
   {
+    title: 'Suscripciones',
+    href: '/suscripciones',
+    description: 'Elige entre Plan Básico, Profesional o Empresarial y activa tu pago.',
+    eyebrow: 'Comercial',
+  },
+  {
+    title: 'Admin Planes',
+    href: '/admin/planes',
+    description: 'Panel de administración para precios, estado de planes y suscripciones.',
+    eyebrow: 'Backoffice',
+  },
+  {
     title: 'Clientes',
     href: '/clientes',
     description: 'Crea, edita y administra clientes con datos de contacto y estado de atención.',

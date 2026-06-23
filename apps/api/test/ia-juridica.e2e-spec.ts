@@ -2,6 +2,7 @@ import { getAuthToken } from './helpers/auth';
 import { createClient } from './helpers/clients';
 import { createExpediente } from './helpers/expedientes';
 import { createDocumento } from './helpers/documentos';
+import { getPlans, subscribeWithStripe } from './helpers/subscriptions';
 import { baseUrl, createApiClient, e2eTimeout } from './helpers/e2e-config';
 
 const api = createApiClient(baseUrl);
@@ -13,6 +14,11 @@ describe('IA Juridica E2E', () => {
   beforeAll(async () => {
     const auth = await getAuthToken(baseUrl, { role: 'abogado' });
     accessToken = auth.accessToken;
+
+    const plans = await getPlans(accessToken, baseUrl);
+    const basic = plans.find((plan) => plan.code === 'basic');
+    expect(basic).toBeDefined();
+    await subscribeWithStripe(accessToken, basic!.id, baseUrl);
   });
 
   it('should reject requests without auth token', async () => {

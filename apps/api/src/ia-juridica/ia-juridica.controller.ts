@@ -6,10 +6,13 @@ import { IaJuridicaService } from './ia-juridica.service';
 import { AnalyzeDocumentDto } from './dto/analyze-document.dto';
 import { GenerateDraftDto } from './dto/generate-draft.dto';
 import { ExpedienteSummaryDto } from './dto/expediente-summary.dto';
+import { PremiumGuard } from '../subscriptions/premium.guard';
+import { PremiumFeature } from '../subscriptions/premium-feature.decorator';
 
 @Controller('api/ia-juridica')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PremiumGuard)
 @Roles('admin', 'abogado', 'asistente')
+@PremiumFeature()
 export class IaJuridicaController {
   constructor(private readonly iaJuridicaService: IaJuridicaService) {}
 

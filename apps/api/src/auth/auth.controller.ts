@@ -6,10 +6,14 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { Roles } from './roles.decorator';
 import { RolesGuard } from './roles.guard';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly subscriptionsService: SubscriptionsService,
+  ) {}
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
@@ -35,7 +39,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'abogado', 'asistente', 'cliente')
   @Get('profile')
-  getProfile(
+  async getProfile(
     @Request()
     req: {
       user: {
@@ -46,6 +50,10 @@ export class AuthController {
       };
     },
   ) {
-    return req.user;
+    const subscription = await this.subscriptionsService.getUserSubscription(String(req.user.userId));
+    return {
+      ...req.user,
+      subscription,
+    };
   }
 }

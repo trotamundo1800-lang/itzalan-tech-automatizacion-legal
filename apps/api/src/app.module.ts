@@ -8,6 +8,7 @@ import { ExpedientesModule } from './expedientes/expedientes.module';
 import { AgendaModule } from './agenda/agenda.module';
 import { DocumentosModule } from './documentos/documentos.module';
 import { IaJuridicaModule } from './ia-juridica/ia-juridica.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -36,6 +37,7 @@ import { AppService } from './app.service';
     AgendaModule,
     DocumentosModule,
     IaJuridicaModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

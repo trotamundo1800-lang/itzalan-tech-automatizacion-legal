@@ -11,12 +11,14 @@ import { RolesGuard } from './roles.guard';
 import { Reflector } from '@nestjs/core';
 import { UsersService } from '../users/users.service';
 import { UsersController } from '../users/users.controller';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule,
     ConfigModule,
+    SubscriptionsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
