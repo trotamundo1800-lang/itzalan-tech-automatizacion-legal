@@ -2,10 +2,10 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { ExpedientesService } from './expedientes.service';
 import { CreateExpedienteDto } from './dto/create-expediente.dto';
 import { UpdateExpedienteDto } from './dto/update-expediente.dto';
+import { FindExpedientesQueryDto } from './dto/find-expedientes-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { ExpedienteEstado } from './expediente.entity';
 
 @Controller('api/expedientes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -19,8 +19,8 @@ export class ExpedientesController {
   }
 
   @Get()
-  findAll(@Query('clienteId') clienteId?: string, @Query('estado') estado?: string) {
-    return this.expedientesService.findAll({ clienteId, estado: estado as ExpedienteEstado });
+  findAll(@Query() query: FindExpedientesQueryDto) {
+    return this.expedientesService.findAll(query);
   }
 
   @Get(':id')

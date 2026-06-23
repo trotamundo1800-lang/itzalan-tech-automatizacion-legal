@@ -21,6 +21,18 @@ const features = [
     eyebrow: 'Inteligencia legal',
   },
   {
+    title: 'Documentos',
+    href: '/documentos',
+    description: 'Administra documentos legales y genera Word/PDF vinculados a clientes y expedientes.',
+    eyebrow: 'Automatización',
+  },
+  {
+    title: 'IA Jurídica',
+    href: '/ia-juridica',
+    description: 'Analiza documentos, genera borradores y resume expedientes con soporte de IA.',
+    eyebrow: 'Asistente legal',
+  },
+  {
     title: 'Clientes',
     href: '/clientes',
     description: 'Crea, edita y administra clientes con datos de contacto y estado de atención.',

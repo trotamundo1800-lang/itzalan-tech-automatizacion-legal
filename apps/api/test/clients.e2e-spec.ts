@@ -32,6 +32,31 @@ describe('Clients E2E', () => {
       ...createPayload,
     });
 
+    const getResponse = await api
+      .get(`/api/clientes/${createResponse.body.id}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.body).toMatchObject({
+      id: createResponse.body.id,
+      nombre: createPayload.nombre,
+      email: createPayload.email,
+    });
+
+    const updatePayload = {
+      nombre: `${createPayload.nombre} Editado`,
+      telefono: '5557654321',
+      estado: 'inactivo',
+    };
+
+    const updateResponse = await api
+      .patch(`/api/clientes/${createResponse.body.id}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send(updatePayload);
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateResponse.body).toMatchObject(updatePayload);
+
     const listResponse = await api
       .get('/api/clientes')
       .set('Authorization', `Bearer ${accessToken}`);
@@ -46,5 +71,11 @@ describe('Clients E2E', () => {
 
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.body.message).toBe('Cliente eliminado');
+
+    const missingResponse = await api
+      .get(`/api/clientes/${createResponse.body.id}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(missingResponse.status).toBe(404);
   });
 });

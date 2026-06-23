@@ -5,6 +5,9 @@ import { AuthModule } from './auth/auth.module';
 import { ContractsModule } from './contracts/contracts.module';
 import { ClientsModule } from './clients/clients.module';
 import { ExpedientesModule } from './expedientes/expedientes.module';
+import { AgendaModule } from './agenda/agenda.module';
+import { DocumentosModule } from './documentos/documentos.module';
+import { IaJuridicaModule } from './ia-juridica/ia-juridica.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -30,6 +33,9 @@ import { AppService } from './app.service';
     ContractsModule,
     ClientsModule,
     ExpedientesModule,
+    AgendaModule,
+    DocumentosModule,
+    IaJuridicaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

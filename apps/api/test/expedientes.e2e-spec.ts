@@ -47,13 +47,33 @@ describe('Expedientes E2E', () => {
       clienteId: client.id,
     });
 
+    const getResponse = await api
+      .get(`/api/expedientes/${createResponse.body.id}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.body).toMatchObject({
+      id: createResponse.body.id,
+      titulo: createPayload.titulo,
+      clienteId: client.id,
+    });
+
+    const filteredResponse = await api
+      .get(`/api/expedientes?clienteId=${client.id}&estado=abierto`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(filteredResponse.status).toBe(200);
+    expect(Array.isArray(filteredResponse.body)).toBe(true);
+    expect(filteredResponse.body.some((expediente: { id: string }) => expediente.id === createResponse.body.id)).toBe(true);
+
     const updateResponse = await api
       .patch(`/api/expedientes/${createResponse.body.id}`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ estado: 'en_proceso' });
+      .send({ estado: 'en_proceso', titulo: `${createPayload.titulo} actualizado` });
 
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.body.estado).toBe('en_proceso');
+    expect(updateResponse.body.titulo).toContain('actualizado');
 
     const deleteResponse = await api
       .delete(`/api/expedientes/${createResponse.body.id}`)
@@ -61,6 +81,12 @@ describe('Expedientes E2E', () => {
 
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.body.message).toBe('Expediente eliminado');
+
+    const missingResponse = await api
+      .get(`/api/expedientes/${createResponse.body.id}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(missingResponse.status).toBe(404);
 
     await api
       .delete(`/api/clientes/${client.id}`)
