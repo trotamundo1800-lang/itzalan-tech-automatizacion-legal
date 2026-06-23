@@ -106,7 +106,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center text-sm text-slate-600">
           <p>
-            ¿No tienes cuenta? <Link href="/register" className="text-slate-900 font-semibold">Regístrate</Link>
+            ¿No tienes cuenta? <Link href="/registro" className="text-slate-900 font-semibold">Regístrate</Link>
           </p>
         </div>
       </section>

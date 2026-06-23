@@ -56,7 +56,7 @@ export default function Nav() {
             <Link href="/login" className="hover:text-slate-900">
               Login
             </Link>
-            <Link href="/register" className="hover:text-slate-900">
+            <Link href="/registro" className="hover:text-slate-900">
               Regístrate
             </Link>
           </>

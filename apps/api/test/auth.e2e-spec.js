@@ -1,34 +1,24 @@
-const request = require('supertest');
-const base = 'http://localhost:3001';
+const { getAuthToken, registerUser } = require('./helpers/auth');
+const { baseUrl, createApiClient, e2eTimeout } = require('./helpers/e2e-config');
+
+const api = createApiClient(baseUrl);
 
 describe('Auth E2E', () => {
-  jest.setTimeout(20000);
+  jest.setTimeout(e2eTimeout);
 
   it('should register, login, get profile, refresh and logout', async () => {
-    const email = `test+${Date.now()}@example.com`;
-    const password = 'Password123!';
+    const { user } = await registerUser(baseUrl);
+    const { accessToken, refreshToken } = await getAuthToken(baseUrl, user);
 
-    const reg = await request(base)
-      .post('/auth/register')
-      .send({ email, password, name: 'E2E User' });
-    expect(reg.status).toBe(201);
-    expect(reg.body).toHaveProperty('accessToken');
-    expect(reg.body).toHaveProperty('refreshToken');
-
-    const login = await request(base).post('/auth/login').send({ email, password });
-    expect(login.status).toBe(201);
-    expect(login.body).toHaveProperty('accessToken');
-
-    const access = login.body.accessToken;
-    const profile = await request(base).get('/auth/profile').set('Authorization', 'Bearer ' + access);
+    const profile = await api.get('/auth/profile').set('Authorization', 'Bearer ' + accessToken);
     expect(profile.status).toBe(200);
-    expect(profile.body).toHaveProperty('email', email);
+    expect(profile.body).toHaveProperty('email', user.email);
 
-    const refreshRes = await request(base).post('/auth/refresh').send({ refreshToken: login.body.refreshToken });
+    const refreshRes = await api.post('/auth/refresh').send({ refreshToken });
     expect(refreshRes.status).toBe(201);
     expect(refreshRes.body).toHaveProperty('accessToken');
 
-    const logout = await request(base).post('/auth/logout').send({ refreshToken: login.body.refreshToken });
+    const logout = await api.post('/auth/logout').send({ refreshToken });
     expect(logout.status).toBe(201);
   });
 });

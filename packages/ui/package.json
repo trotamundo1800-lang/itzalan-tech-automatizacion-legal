@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "test": "echo No tests configured for @itzalan/ui"
   },
   "dependencies": {
     "react": "18.3.1"

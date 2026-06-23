@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { ContractsModule } from './contracts/contracts.module';
+import { ClientsModule } from './clients/clients.module';
+import { ExpedientesModule } from './expedientes/expedientes.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -24,6 +27,9 @@ import { AppService } from './app.service';
       autoLoadEntities: true,
     }),
     AuthModule,
+    ContractsModule,
+    ClientsModule,
+    ExpedientesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
