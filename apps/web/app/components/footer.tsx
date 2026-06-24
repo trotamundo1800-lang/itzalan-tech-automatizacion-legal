@@ -15,6 +15,9 @@ export default function Footer() {
           <Link href="/manual" className="hover:text-slate-900">
             Manual
           </Link>
+          <Link href="/feedback" className="hover:text-slate-900">
+            Retroalimentación
+          </Link>
         </div>
       </div>
     </footer>
