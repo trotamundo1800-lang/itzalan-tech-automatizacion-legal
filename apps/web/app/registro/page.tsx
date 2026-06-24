@@ -129,6 +129,17 @@ export default function RegistroPage() {
 					<p>
 						¿Ya tienes cuenta? <Link href="/login" className="text-slate-900 font-semibold">Inicia sesión</Link>
 					</p>
+					<p className="mt-3 text-xs leading-5 text-slate-500">
+						Al crear una cuenta aceptas nuestros{' '}
+						<Link href="/terminos" className="font-semibold text-slate-700 underline underline-offset-2">
+							Términos
+						</Link>{' '}
+						y la{' '}
+						<Link href="/privacidad" className="font-semibold text-slate-700 underline underline-offset-2">
+							Política de privacidad
+						</Link>
+						.
+					</p>
 				</div>
 			</section>
 		</main>

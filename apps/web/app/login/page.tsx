@@ -108,6 +108,17 @@ export default function LoginPage() {
           <p>
             ¿No tienes cuenta? <Link href="/registro" className="text-slate-900 font-semibold">Regístrate</Link>
           </p>
+          <p className="mt-3 text-xs leading-5 text-slate-500">
+            Al continuar aceptas nuestros{' '}
+            <Link href="/terminos" className="font-semibold text-slate-700 underline underline-offset-2">
+              Términos
+            </Link>{' '}
+            y la{' '}
+            <Link href="/privacidad" className="font-semibold text-slate-700 underline underline-offset-2">
+              Política de privacidad
+            </Link>
+            .
+          </p>
         </div>
       </section>
     </main>

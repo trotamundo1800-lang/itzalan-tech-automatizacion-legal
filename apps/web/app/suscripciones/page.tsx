@@ -219,6 +219,27 @@ export default function SuscripcionesPage() {
             </article>
           ))}
         </section>
+
+        <div className="mt-8 border-t border-slate-200 pt-6 text-sm text-slate-600">
+          <p>
+            Consulta nuestros{' '}
+            <Link href="/terminos" className="font-semibold text-slate-900 underline underline-offset-2">
+              Términos y condiciones
+            </Link>{' '}
+            y la{' '}
+            <Link href="/privacidad" className="font-semibold text-slate-900 underline underline-offset-2">
+              Política de privacidad
+            </Link>{' '}
+            antes de activar un plan.
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            También puedes revisar el{' '}
+            <Link href="/manual" className="font-semibold text-slate-700 underline underline-offset-2">
+              manual comercial
+            </Link>{' '}
+            para ver el flujo de uso y demo.
+          </p>
+        </div>
       </section>
     </main>
   );
