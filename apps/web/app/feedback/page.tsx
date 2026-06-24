@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { API_BASE_URL } from '../lib/api';
 
 type FormData = {
   nombre: string;
@@ -71,16 +72,61 @@ const textareaCls = `${inputCls} resize-none`;
 export default function FeedbackPage() {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   function set(key: keyof FormData, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // In production: POST form data to an API endpoint or forward to a third-party form service.
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setSending(true);
+    setSubmitError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: form.nombre,
+          profesion: form.profesion,
+          areaPractica: form.area,
+          ciudad: form.ciudad,
+          experienciaGeneral: form.facilUso,
+          moduloMasUtil: form.moduloUtil,
+          problemasRegistro: form.problemaLogin,
+          utilidadClientesExpedientes: form.clientesExpUtil,
+          documentosFrecuentes: form.documentosFrecuentes,
+          formatosAgregar: form.formatosPrimero,
+          ayudaIA: form.iaAyudo,
+          claridadIA: form.iaClara,
+          consultasIA: form.iaConsultas,
+          pagaria: form.pagaria,
+          planInteres: form.planInteres,
+          precioRazonable: form.precioRazonable,
+          funcionPago: form.funcionJustifica,
+          recomendaria: form.recomendaria,
+          calificacion: form.calificacion,
+          mejoras: form.mejoras,
+          comentarios: form.comentarios,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        const msg = data?.message ?? 'Error al enviar. Intente nuevamente.';
+        setSubmitError(Array.isArray(msg) ? msg[0] : msg);
+        return;
+      }
+
+      setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      setSubmitError('No se pudo conectar con el servidor. Intente nuevamente.');
+    } finally {
+      setSending(false);
+    }
   }
 
   if (submitted) {
@@ -277,11 +323,16 @@ export default function FeedbackPage() {
           </Field>
         </section>
 
+        {submitError && (
+          <p className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{submitError}</p>
+        )}
+
         <button
           type="submit"
-          className="w-full rounded-full bg-slate-900 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-700"
+          disabled={sending}
+          className="w-full rounded-full bg-slate-900 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Enviar retroalimentación
+          {sending ? 'Enviando...' : 'Enviar retroalimentación'}
         </button>
       </form>
     </main>
