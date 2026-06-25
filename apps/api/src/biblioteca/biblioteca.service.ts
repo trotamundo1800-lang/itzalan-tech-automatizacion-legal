@@ -7,7 +7,9 @@ import { BibliotecaDocument } from './biblioteca-document.entity';
 import { UploadBibliotecaDto } from './dto/upload-biblioteca.dto';
 import { FindBibliotecaQueryDto } from './dto/find-biblioteca-query.dto';
 import { ConsultarBibliotecaDto } from './dto/consultar-biblioteca.dto';
+import { BibliotecaChunk } from './biblioteca-chunk.entity';
 import { IaJuridicaService } from '../ia-juridica/ia-juridica.service';
+import { TextExtractionService } from './text-extraction.service';
 
 /** Allowed MIME types and their canonical names */
 const ALLOWED_MIME: Record<string, string> = {
@@ -21,7 +23,10 @@ export class BibliotecaService {
   constructor(
     @InjectRepository(BibliotecaDocument)
     private readonly bibliotecaRepository: Repository<BibliotecaDocument>,
+    @InjectRepository(BibliotecaChunk)
+    private readonly chunkRepository: Repository<BibliotecaChunk>,
     private readonly iaJuridicaService: IaJuridicaService,
+    private readonly extractionService: TextExtractionService,
   ) {}
 
   /** Validate MIME type and return safe extension */
@@ -127,13 +132,14 @@ export class BibliotecaService {
     return { filePath: resolved, mimeType: doc.mimeType, filename: doc.archivoNombre };
   }
 
-  /** Consult the biblioteca with a legal question, searches relevant docs and sends to IA */
+  /** Consult the biblioteca with a legal question, searches relevant docs and chunks, sends to IA */
   async consultar(
     payload: ConsultarBibliotecaDto,
     userId: string,
   ): Promise<{
     respuesta: string;
     documentosRelevantes: BibliotecaDocument[];
+    chunkesRelevantes?: BibliotecaChunk[];
     modo: string;
     riesgos?: string[];
     recomendaciones?: string[];
@@ -148,19 +154,34 @@ export class BibliotecaService {
     // Find relevant documents from biblioteca
     const docsRelevantes = await this.findAll(searchFilters);
 
-    if (docsRelevantes.length === 0) {
+    // Also search relevant chunks if extraction is completed
+    let chunkesRelevantes: BibliotecaChunk[] = [];
+    if (payload.pregunta) {
+      chunkesRelevantes = await this.extractionService.searchChunks(payload.pregunta, 5);
+    }
+
+    if (docsRelevantes.length === 0 && chunkesRelevantes.length === 0) {
       return {
-        respuesta: 'No se encontraron documentos relevantes en la biblioteca para tu consulta.',
+        respuesta:
+          'No se encontraron documentos o contenidos relevantes en la biblioteca para tu consulta.',
         documentosRelevantes: [],
+        chunkesRelevantes: [],
         modo: 'local',
       };
     }
 
-    // Build context from document metadata (we don't read full file contents for performance)
+    // Build context from document metadata + extracted text chunks
     const contextoDocs = docsRelevantes
       .map(
         (doc) =>
           `[${doc.tipoDocumento.toUpperCase()}] ${doc.titulo} (${doc.categoria}): ${doc.descripcion || 'Sin descripción'}`,
+      )
+      .join('\n');
+
+    const contextChunks = chunkesRelevantes
+      .map(
+        (chunk) =>
+          `"${chunk.content.slice(0, 200)}..." (del documento ID: ${chunk.documentoId.slice(0, 8)})`,
       )
       .join('\n');
 
@@ -171,9 +192,11 @@ Consulta del usuario: ${payload.pregunta}
 Contexto adicional: ${payload.contexto || 'No proporcionado'}
 
 Documentos relevantes de la biblioteca jurídica:
-${contextoDocs}
+${contextoDocs || 'Sin documentos relevantes'}
 
-Basándote en los documentos de referencia anteriores, proporciona una respuesta jurídica completa.
+${chunkesRelevantes.length > 0 ? `Extractos relevantes de documentos procesados:\n${contextChunks}` : ''}
+
+Basándote en los documentos y contenido de referencia anteriores, proporciona una respuesta jurídica completa.
     `.trim();
 
     // Call IA Jurídica service with the enriched consultation
@@ -186,6 +209,7 @@ Basándote en los documentos de referencia anteriores, proporciona una respuesta
     return {
       respuesta: result.respuesta,
       documentosRelevantes: docsRelevantes,
+      chunkesRelevantes: chunkesRelevantes.slice(0, 3), // Return top 3 chunks
       modo: result.modo,
       riesgos: result.riesgos,
       recomendaciones: result.accionesSugeridas,

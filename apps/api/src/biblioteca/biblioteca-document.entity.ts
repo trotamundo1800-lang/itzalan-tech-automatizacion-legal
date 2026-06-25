@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { User } from '../auth/user.entity';
+import { BibliotecaChunk } from './biblioteca-chunk.entity';
 
 export type BibliotecaTipoDocumento =
   | 'ley'
@@ -8,6 +9,8 @@ export type BibliotecaTipoDocumento =
   | 'doctrina'
   | 'formulario'
   | 'otro';
+
+export type ExtractionStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 @Entity({ name: 'biblioteca_documents' })
 export class BibliotecaDocument {
@@ -44,6 +47,22 @@ export class BibliotecaDocument {
   /** NULL placeholder for future RAG embedding vector ID */
   @Column({ type: 'varchar', nullable: true })
   vectorId?: string | null;
+
+  /** Extracted text from document (Phase 2 RAG) */
+  @Column({ type: 'text', nullable: true })
+  extractedText?: string | null;
+
+  /** Extraction status: pending (default), processing, completed, failed */
+  @Column({ type: 'varchar', length: 20, default: 'pending' })
+  extractionStatus!: ExtractionStatus;
+
+  /** Timestamp when text extraction was completed */
+  @Column({ type: 'timestamp', nullable: true })
+  extractedAt?: Date | null;
+
+  /** Chunks of this document for RAG/embeddings */
+  @OneToMany(() => BibliotecaChunk, (chunk) => chunk.documento, { lazy: false })
+  chunks?: BibliotecaChunk[];
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'usuarioId' })

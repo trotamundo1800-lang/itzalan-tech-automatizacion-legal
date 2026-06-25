@@ -22,6 +22,7 @@ import { BibliotecaService } from './biblioteca.service';
 import { UploadBibliotecaDto } from './dto/upload-biblioteca.dto';
 import { FindBibliotecaQueryDto } from './dto/find-biblioteca-query.dto';
 import { ConsultarBibliotecaDto } from './dto/consultar-biblioteca.dto';
+import { TextExtractionService } from './text-extraction.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -56,7 +57,10 @@ const multerOptions = {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin', 'abogado', 'asistente')
 export class BibliotecaController {
-  constructor(private readonly bibliotecaService: BibliotecaService) {}
+  constructor(
+    private readonly bibliotecaService: BibliotecaService,
+    private readonly extractionService: TextExtractionService,
+  ) {}
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('archivo', multerOptions))
@@ -95,6 +99,11 @@ export class BibliotecaController {
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
     res.sendFile(filePath);
+  }
+
+  @Post(':id/process')
+  async processDocument(@Param('id') id: string) {
+    return this.extractionService.processDocument(id);
   }
 
   @Delete(':id')
