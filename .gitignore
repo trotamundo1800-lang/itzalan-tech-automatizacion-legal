@@ -29,3 +29,5 @@ node_modules/
 .vscode
 pnpm-lock.yaml
 apps/api/database.sqlite
+
+uploads/

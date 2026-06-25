@@ -1,71 +1,127 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
-import { BibliotecaItem, BibliotecaItemEstado, BibliotecaItemTipo } from './biblioteca-item.entity';
-import { CreateBibliotecaItemDto } from './dto/create-biblioteca-item.dto';
-import { UpdateBibliotecaItemDto } from './dto/update-biblioteca-item.dto';
+import * as fs from 'fs';
+import * as path from 'path';
+import { BibliotecaDocument } from './biblioteca-document.entity';
+import { UploadBibliotecaDto } from './dto/upload-biblioteca.dto';
+import { FindBibliotecaQueryDto } from './dto/find-biblioteca-query.dto';
+
+/** Allowed MIME types and their canonical names */
+const ALLOWED_MIME: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'text/plain': 'txt',
+};
 
 @Injectable()
 export class BibliotecaService {
   constructor(
-    @InjectRepository(BibliotecaItem)
-    private readonly bibliotecaRepository: Repository<BibliotecaItem>,
+    @InjectRepository(BibliotecaDocument)
+    private readonly bibliotecaRepository: Repository<BibliotecaDocument>,
   ) {}
 
-  create(payload: CreateBibliotecaItemDto, userId: string) {
-    const item = this.bibliotecaRepository.create({
-      ...payload,
-      estado: payload.estado ?? 'activo',
-      createdByUserId: userId,
-    });
-    return this.bibliotecaRepository.save(item);
+  /** Validate MIME type and return safe extension */
+  validateMimeType(mimeType: string): string {
+    const ext = ALLOWED_MIME[mimeType];
+    if (!ext) {
+      throw new BadRequestException(
+        'Tipo de archivo no permitido. Solo se aceptan PDF, DOCX y TXT.',
+      );
+    }
+    return ext;
   }
 
-  findAll(filters?: { tipo?: BibliotecaItemTipo; estado?: BibliotecaItemEstado; q?: string }) {
-    const where: Record<string, unknown> = {};
+  /** Return a sanitized display name (strip path separators) */
+  sanitizeFilename(original: string): string {
+    return path
+      .basename(original)
+      .replace(/[^a-zA-Z0-9._\- ]/g, '_')
+      .slice(0, 200);
+  }
 
-    if (filters?.tipo) {
-      where['tipo'] = filters.tipo;
-    }
+  async create(
+    file: Express.Multer.File,
+    payload: UploadBibliotecaDto,
+    userId: string,
+  ): Promise<BibliotecaDocument> {
+    this.validateMimeType(file.mimetype);
 
-    if (filters?.estado) {
-      where['estado'] = filters.estado;
-    }
+    const doc = this.bibliotecaRepository.create({
+      titulo: payload.titulo.trim(),
+      tipoDocumento: payload.tipoDocumento,
+      categoria: payload.categoria.trim(),
+      descripcion: payload.descripcion?.trim() ?? null,
+      archivoNombre: this.sanitizeFilename(file.originalname),
+      archivoRuta: file.path.replace(/\\/g, '/'),
+      mimeType: file.mimetype,
+      tamano: file.size,
+      vectorId: null,
+      usuarioId: userId,
+    });
 
-    if (filters?.q) {
+    return this.bibliotecaRepository.save(doc);
+  }
+
+  findAll(filters: FindBibliotecaQueryDto): Promise<BibliotecaDocument[]> {
+    const base: Record<string, unknown> = {};
+
+    if (filters.tipoDocumento) base['tipoDocumento'] = filters.tipoDocumento;
+    if (filters.categoria) base['categoria'] = filters.categoria;
+
+    if (filters.q) {
       return this.bibliotecaRepository.find({
         where: [
-          { ...where, titulo: ILike(`%${filters.q}%`) },
-          { ...where, descripcion: ILike(`%${filters.q}%`) },
-          { ...where, fuente: ILike(`%${filters.q}%`) },
+          { ...base, titulo: ILike(`%${filters.q}%`) },
+          { ...base, descripcion: ILike(`%${filters.q}%`) },
+          { ...base, categoria: ILike(`%${filters.q}%`) },
         ],
         order: { createdAt: 'DESC' },
       });
     }
 
     return this.bibliotecaRepository.find({
-      where,
+      where: base,
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findOne(id: string) {
-    const item = await this.bibliotecaRepository.findOne({ where: { id } });
-    if (!item) {
-      throw new NotFoundException('Recurso no encontrado en la biblioteca');
+  async findOne(id: string): Promise<BibliotecaDocument> {
+    const doc = await this.bibliotecaRepository.findOne({ where: { id } });
+    if (!doc) {
+      throw new NotFoundException('Documento no encontrado en la biblioteca');
     }
-    return item;
+    return doc;
   }
 
-  async update(id: string, payload: UpdateBibliotecaItemDto) {
-    const item = await this.findOne(id);
-    Object.assign(item, payload);
-    return this.bibliotecaRepository.save(item);
+  async remove(id: string): Promise<{ message: string }> {
+    const doc = await this.findOne(id);
+
+    // Delete physical file if it exists
+    if (doc.archivoRuta && fs.existsSync(doc.archivoRuta)) {
+      fs.unlinkSync(doc.archivoRuta);
+    }
+
+    await this.bibliotecaRepository.remove(doc);
+    return { message: 'Documento eliminado de la biblioteca' };
   }
 
-  async remove(id: string) {
-    const item = await this.findOne(id);
-    await this.bibliotecaRepository.remove(item);
-    return { message: 'Recurso eliminado de la biblioteca' };
+  /** Returns the absolute resolved path for serving the file */
+  async resolveFilePath(id: string): Promise<{ filePath: string; mimeType: string; filename: string }> {
+    const doc = await this.findOne(id);
+    const resolved = path.resolve(doc.archivoRuta);
+
+    // Prevent path traversal: ensure file is inside the uploads directory
+    const uploadsDir = path.resolve('uploads/biblioteca');
+    if (!resolved.startsWith(uploadsDir)) {
+      throw new BadRequestException('Ruta de archivo inválida');
+    }
+
+    if (!fs.existsSync(resolved)) {
+      throw new NotFoundException('El archivo físico no está disponible');
+    }
+
+    return { filePath: resolved, mimeType: doc.mimeType, filename: doc.archivoNombre };
   }
 }
+

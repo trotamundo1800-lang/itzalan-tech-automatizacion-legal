@@ -1,11 +1,55 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Request,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { Response } from 'express';
 import { BibliotecaService } from './biblioteca.service';
-import { CreateBibliotecaItemDto } from './dto/create-biblioteca-item.dto';
-import { UpdateBibliotecaItemDto } from './dto/update-biblioteca-item.dto';
+import { UploadBibliotecaDto } from './dto/upload-biblioteca.dto';
 import { FindBibliotecaQueryDto } from './dto/find-biblioteca-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+
+const ALLOWED_MIMES = new Set([
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+]);
+
+const ALLOWED_EXTS = new Set(['.pdf', '.docx', '.txt']);
+
+const multerOptions = {
+  storage: diskStorage({
+    destination: 'uploads/biblioteca',
+    filename: (_req, file, cb) => {
+      const ext = extname(file.originalname).toLowerCase();
+      cb(null, `${uuidv4()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  fileFilter: (_req: unknown, file: Express.Multer.File, cb: (err: Error | null, accept: boolean) => void) => {
+    const ext = extname(file.originalname).toLowerCase();
+    if (!ALLOWED_MIMES.has(file.mimetype) || !ALLOWED_EXTS.has(ext)) {
+      return cb(new BadRequestException('Tipo de archivo no permitido. Solo PDF, DOCX y TXT.'), false);
+    }
+    cb(null, true);
+  },
+};
 
 @Controller(['api/biblioteca', 'biblioteca'])
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13,12 +57,17 @@ import { Roles } from '../auth/roles.decorator';
 export class BibliotecaController {
   constructor(private readonly bibliotecaService: BibliotecaService) {}
 
-  @Post()
-  create(
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('archivo', multerOptions))
+  upload(
     @Request() req: { user: { userId: string } },
-    @Body() payload: CreateBibliotecaItemDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() payload: UploadBibliotecaDto,
   ) {
-    return this.bibliotecaService.create(payload, req.user.userId);
+    if (!file) {
+      throw new BadRequestException('Se requiere un archivo');
+    }
+    return this.bibliotecaService.create(file, payload, req.user.userId);
   }
 
   @Get()
@@ -31,9 +80,12 @@ export class BibliotecaController {
     return this.bibliotecaService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() payload: UpdateBibliotecaItemDto) {
-    return this.bibliotecaService.update(id, payload);
+  @Get(':id/file')
+  async serveFile(@Param('id') id: string, @Res() res: Response) {
+    const { filePath, mimeType, filename } = await this.bibliotecaService.resolveFilePath(id);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
+    res.sendFile(filePath);
   }
 
   @Delete(':id')
@@ -41,3 +93,4 @@ export class BibliotecaController {
     return this.bibliotecaService.remove(id);
   }
 }
+

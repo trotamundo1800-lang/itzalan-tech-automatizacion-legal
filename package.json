@@ -19,6 +19,7 @@
     "lint": "npm run lint --workspaces"
   },
   "devDependencies": {
+    "@types/uuid": "^10.0.0",
     "typescript": "^5.5.4"
   },
   "dependencies": {

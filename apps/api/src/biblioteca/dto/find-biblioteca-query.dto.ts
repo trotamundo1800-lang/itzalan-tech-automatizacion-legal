@@ -2,12 +2,12 @@ import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class FindBibliotecaQueryDto {
   @IsOptional()
-  @IsIn(['ley', 'reglamento', 'jurisprudencia', 'doctrina', 'formulario'])
-  tipo?: 'ley' | 'reglamento' | 'jurisprudencia' | 'doctrina' | 'formulario';
+  @IsIn(['ley', 'reglamento', 'jurisprudencia', 'doctrina', 'formulario', 'otro'])
+  tipoDocumento?: 'ley' | 'reglamento' | 'jurisprudencia' | 'doctrina' | 'formulario' | 'otro';
 
   @IsOptional()
-  @IsIn(['activo', 'archivado'])
-  estado?: 'activo' | 'archivado';
+  @IsString()
+  categoria?: string;
 
   @IsOptional()
   @IsString()
