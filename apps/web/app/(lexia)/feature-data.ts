@@ -1,5 +1,5 @@
 export type FeatureModule = {
-  slug: 'contratos' | 'agenda' | 'analisis' | 'clientes' | 'expedientes' | 'documentos' | 'ia-juridica';
+  slug: 'contratos' | 'agenda' | 'analisis' | 'clientes' | 'expedientes' | 'documentos' | 'ia-juridica' | 'biblioteca';
   title: string;
   eyebrow: string;
   description: string;
@@ -191,6 +191,32 @@ export const featureModules: Record<FeatureModule['slug'], FeatureModule> = {
       status: 'planned',
       endpoint: '/api/ia-juridica/analizar-documento',
       method: 'POST',
+    },
+  },
+  biblioteca: {
+    slug: 'biblioteca',
+    title: 'Biblioteca jurídica',
+    eyebrow: 'Referencia',
+    description:
+      'Organiza leyes, reglamentos, jurisprudencia, doctrina y formularios en un repositorio de consulta rápida para el despacho.',
+    highlights: [
+      {
+        title: 'Categorías claras',
+        description: 'Clasifica recursos por tipo — ley, reglamento, jurisprudencia, doctrina o formulario.',
+      },
+      {
+        title: 'Búsqueda integrada',
+        description: 'Localiza cualquier recurso por título, descripción o fuente en segundos.',
+      },
+      {
+        title: 'Fuentes y enlaces',
+        description: 'Registra la fuente oficial y URL de referencia para trazabilidad normativa.',
+      },
+    ],
+    backend: {
+      status: 'planned',
+      endpoint: '/api/biblioteca',
+      method: 'GET',
     },
   },
 };

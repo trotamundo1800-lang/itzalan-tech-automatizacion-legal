@@ -22,6 +22,7 @@ const moduleGroups = [
       { href: '/contratos', label: 'Contratos' },
       { href: '/ia-juridica', label: 'IA Jurídica' },
       { href: '/analisis', label: 'Análisis' },
+      { href: '/biblioteca', label: 'Biblioteca' },
     ],
   },
   {
