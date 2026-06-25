@@ -6,6 +6,8 @@ import * as path from 'path';
 import { BibliotecaDocument } from './biblioteca-document.entity';
 import { UploadBibliotecaDto } from './dto/upload-biblioteca.dto';
 import { FindBibliotecaQueryDto } from './dto/find-biblioteca-query.dto';
+import { ConsultarBibliotecaDto } from './dto/consultar-biblioteca.dto';
+import { IaJuridicaService } from '../ia-juridica/ia-juridica.service';
 
 /** Allowed MIME types and their canonical names */
 const ALLOWED_MIME: Record<string, string> = {
@@ -19,6 +21,7 @@ export class BibliotecaService {
   constructor(
     @InjectRepository(BibliotecaDocument)
     private readonly bibliotecaRepository: Repository<BibliotecaDocument>,
+    private readonly iaJuridicaService: IaJuridicaService,
   ) {}
 
   /** Validate MIME type and return safe extension */
@@ -122,6 +125,71 @@ export class BibliotecaService {
     }
 
     return { filePath: resolved, mimeType: doc.mimeType, filename: doc.archivoNombre };
+  }
+
+  /** Consult the biblioteca with a legal question, searches relevant docs and sends to IA */
+  async consultar(
+    payload: ConsultarBibliotecaDto,
+    userId: string,
+  ): Promise<{
+    respuesta: string;
+    documentosRelevantes: BibliotecaDocument[];
+    modo: string;
+    riesgos?: string[];
+    recomendaciones?: string[];
+  }> {
+    // Build search filters
+    const searchFilters: FindBibliotecaQueryDto = {
+      q: payload.pregunta,
+      tipoDocumento: payload.tipoDocumento as 'ley' | 'reglamento' | 'jurisprudencia' | 'doctrina' | 'formulario' | 'otro' | undefined,
+      categoria: payload.categoria,
+    };
+
+    // Find relevant documents from biblioteca
+    const docsRelevantes = await this.findAll(searchFilters);
+
+    if (docsRelevantes.length === 0) {
+      return {
+        respuesta: 'No se encontraron documentos relevantes en la biblioteca para tu consulta.',
+        documentosRelevantes: [],
+        modo: 'local',
+      };
+    }
+
+    // Build context from document metadata (we don't read full file contents for performance)
+    const contextoDocs = docsRelevantes
+      .map(
+        (doc) =>
+          `[${doc.tipoDocumento.toUpperCase()}] ${doc.titulo} (${doc.categoria}): ${doc.descripcion || 'Sin descripción'}`,
+      )
+      .join('\n');
+
+    // Prepare enhanced prompt with biblioteca context
+    const consultaEnriquecida = `
+Consulta del usuario: ${payload.pregunta}
+
+Contexto adicional: ${payload.contexto || 'No proporcionado'}
+
+Documentos relevantes de la biblioteca jurídica:
+${contextoDocs}
+
+Basándote en los documentos de referencia anteriores, proporciona una respuesta jurídica completa.
+    `.trim();
+
+    // Call IA Jurídica service with the enriched consultation
+    const result = await this.iaJuridicaService.virtualAssistant(userId, {
+      consulta: consultaEnriquecida,
+      tipoAnalisis: 'analisis_juridico',
+      contexto: 'general',
+    });
+
+    return {
+      respuesta: result.respuesta,
+      documentosRelevantes: docsRelevantes,
+      modo: result.modo,
+      riesgos: result.riesgos,
+      recomendaciones: result.accionesSugeridas,
+    };
   }
 }
 

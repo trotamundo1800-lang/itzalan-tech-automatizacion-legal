@@ -21,6 +21,7 @@ import { Response } from 'express';
 import { BibliotecaService } from './biblioteca.service';
 import { UploadBibliotecaDto } from './dto/upload-biblioteca.dto';
 import { FindBibliotecaQueryDto } from './dto/find-biblioteca-query.dto';
+import { ConsultarBibliotecaDto } from './dto/consultar-biblioteca.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -68,6 +69,14 @@ export class BibliotecaController {
       throw new BadRequestException('Se requiere un archivo');
     }
     return this.bibliotecaService.create(file, payload, req.user.userId);
+  }
+
+  @Post('consultar')
+  consultar(
+    @Request() req: { user: { userId: string } },
+    @Body() payload: ConsultarBibliotecaDto,
+  ) {
+    return this.bibliotecaService.consultar(payload, req.user.userId);
   }
 
   @Get()
