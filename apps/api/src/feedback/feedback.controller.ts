@@ -1,8 +1,10 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Req,
+  Query,
   HttpCode,
   HttpStatus,
   InternalServerErrorException,
@@ -14,6 +16,11 @@ import { CreateFeedbackDto } from './dto/create-feedback.dto';
 @Controller('api/feedback')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
+
+  @Get()
+  findRecent(@Query('limit') limit?: string) {
+    return this.feedbackService.findRecent(limit ? Number(limit) : 20);
+  }
 
   @Post()
   @HttpCode(HttpStatus.OK)

@@ -5,6 +5,7 @@ import { Expediente, ExpedienteEstado } from './expediente.entity';
 import { CreateExpedienteDto } from './dto/create-expediente.dto';
 import { UpdateExpedienteDto } from './dto/update-expediente.dto';
 import { Client } from '../clients/client.entity';
+import { SubscriptionQuotaService } from '../subscriptions/subscription-quota.service';
 
 @Injectable()
 export class ExpedientesService {
@@ -13,6 +14,7 @@ export class ExpedientesService {
     private readonly expedienteRepository: Repository<Expediente>,
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
+    private readonly subscriptionQuotaService: SubscriptionQuotaService,
   ) {}
 
   private async ensureClientExists(clienteId: string) {
@@ -22,9 +24,13 @@ export class ExpedientesService {
     }
   }
 
-  async create(payload: CreateExpedienteDto) {
+  async create(payload: CreateExpedienteDto, userId: string) {
+    await this.subscriptionQuotaService.assertExpedienteLimit(userId);
     await this.ensureClientExists(payload.clienteId);
-    const expediente = this.expedienteRepository.create(payload);
+    const expediente = this.expedienteRepository.create({
+      ...payload,
+      createdByUserId: userId,
+    });
     return this.expedienteRepository.save(expediente);
   }
 

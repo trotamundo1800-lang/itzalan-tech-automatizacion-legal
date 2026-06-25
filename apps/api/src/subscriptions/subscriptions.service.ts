@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SubscriptionPlan } from './subscription-plan.entity';
@@ -7,6 +7,14 @@ import { PaymentTransaction } from './payment-transaction.entity';
 import { CheckoutSubscriptionDto } from './dto/checkout-subscription.dto';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
+import { SubscriptionStatus } from './user-subscription.entity';
+
+type PlanLimits = {
+  label: string;
+  items: string[];
+};
+
+type PayPalWebhookHeaders = Record<string, string | string[] | undefined>;
 
 @Injectable()
 export class SubscriptionsService implements OnModuleInit {
@@ -28,26 +36,39 @@ export class SubscriptionsService implements OnModuleInit {
       {
         code: 'basic',
         name: 'Plan Básico',
-        description: 'Acceso inicial a funciones legales con soporte documental y operación estándar.',
+        description: 'Ideal para abogados independientes. Incluye dashboard juridico, CRM, expedientes, agenda y automatizacion documental basica.',
         monthlyPrice: 19,
       },
       {
         code: 'professional',
         name: 'Plan Profesional',
-        description: 'Mayor capacidad operativa, automatización y prioridad para equipos jurídicos en crecimiento.',
+        description: 'Ideal para despachos pequenos y medianos. Incluye todo el plan basico, portal del cliente, prestaciones laborales y automatizaciones n8n.',
         monthlyPrice: 49,
       },
       {
         code: 'business',
-        name: 'Plan Empresarial',
-        description: 'Cobertura completa con soporte premium y enfoque colaborativo multiusuario.',
+        name: 'Plan Corporativo',
+        description: 'Ideal para bufetes grandes y departamentos legales. Incluye IA avanzada, API empresarial, multiempresa, multi-sucursal y soporte VIP.',
         monthlyPrice: 99,
+      },
+      {
+        code: 'enterprise',
+        name: 'Plan Enterprise',
+        description: 'Desde USD 299/mes para firmas nacionales e instituciones. Incluye infraestructura dedicada, marca blanca y SLA empresarial.',
+        monthlyPrice: 299,
       },
     ];
 
     for (const item of defaults) {
       const existing = await this.planRepository.findOne({ where: { code: item.code } });
       if (existing) {
+        existing.name = item.name;
+        existing.description = item.description;
+        existing.monthlyPrice = item.monthlyPrice;
+        existing.currency = 'USD';
+        existing.isActive = true;
+        existing.enablesPremiumFeatures = true;
+        await this.planRepository.save(existing);
         continue;
       }
 
@@ -62,11 +83,144 @@ export class SubscriptionsService implements OnModuleInit {
     }
   }
 
+  private getPlanLimits(code: string): PlanLimits {
+    const limitsByCode: Record<string, PlanLimits> = {
+      basic: {
+        label: 'Límites del plan',
+        items: ['1 usuario', '100 consultas IA/mes', '20 documentos IA/mes', '2 GB de almacenamiento'],
+      },
+      professional: {
+        label: 'Límites del plan',
+        items: ['Usuarios para despacho', 'Consultas IA ilimitadas*', '5 automatizaciones n8n', '50 GB de almacenamiento'],
+      },
+      business: {
+        label: 'Límites del plan',
+        items: ['Usuarios ilimitados', 'Automatizaciones ilimitadas', '500 GB de almacenamiento', 'API empresarial'],
+      },
+      enterprise: {
+        label: 'Límites del plan',
+        items: ['Implementación a medida', 'Infraestructura dedicada', 'Marca blanca', 'SLA empresarial'],
+      },
+    };
+
+    return limitsByCode[code] ?? { label: 'Límites del plan', items: [] };
+  }
+
+  private serializePlan(plan: SubscriptionPlan) {
+    return {
+      ...plan,
+      limits: this.getPlanLimits(plan.code),
+    };
+  }
+
+  private getPayPalMode() {
+    return process.env.PAYPAL_MODE === 'live' ? 'live' : 'sandbox';
+  }
+
+  private getPayPalBaseUrl() {
+    return this.getPayPalMode() === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+  }
+
+  private getAppUrl() {
+    return (process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+  }
+
+  private getApiUrl() {
+    return (process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  }
+
+  private hasRealPayPalConfig() {
+    return Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_SECRET);
+  }
+
+  private getHeaderValue(headers: PayPalWebhookHeaders, key: string) {
+    const value = headers[key] ?? headers[key.toLowerCase()];
+    if (Array.isArray(value)) {
+      return value[0] ?? null;
+    }
+
+    return typeof value === 'string' && value.trim() ? value : null;
+  }
+
+  private async getPayPalAccessToken() {
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const secret = process.env.PAYPAL_SECRET;
+
+    if (!clientId || !secret) {
+      throw new BadRequestException('PayPal no está configurado');
+    }
+
+    const response = await fetch(`${this.getPayPalBaseUrl()}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${clientId}:${secret}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials',
+    });
+
+    if (!response.ok) {
+      throw new BadRequestException('No se pudo autenticar con PayPal');
+    }
+
+    const data = (await response.json()) as { access_token?: string };
+    if (!data.access_token) {
+      throw new BadRequestException('No se pudo obtener el token de acceso de PayPal');
+    }
+
+    return data.access_token;
+  }
+
+  private async createPayPalOrder(plan: SubscriptionPlan, userId: string) {
+    const accessToken = await this.getPayPalAccessToken();
+    const response = await fetch(`${this.getPayPalBaseUrl()}/v2/checkout/orders`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        intent: 'CAPTURE',
+        purchase_units: [
+          {
+            reference_id: plan.code,
+            custom_id: userId,
+            description: plan.name,
+            amount: {
+              currency_code: plan.currency,
+              value: plan.monthlyPrice.toFixed(2),
+            },
+          },
+        ],
+        application_context: {
+          brand_name: process.env.LEGAL_OFFICE_NAME ?? 'ITZALAN TECH',
+          landing_page: 'BILLING',
+          user_action: 'PAY_NOW',
+          return_url: `${this.getAppUrl()}/suscripciones?paypal=approved&source=paypal`,
+          cancel_url: `${this.getAppUrl()}/suscripciones?paypal=cancelled&source=paypal`,
+          shipping_preference: 'NO_SHIPPING',
+          locale: 'es-ES',
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new BadRequestException('No se pudo iniciar el checkout de PayPal');
+    }
+
+    const data = (await response.json()) as { id?: string; links?: Array<{ rel?: string; href?: string }> };
+    return {
+      externalReferenceId: data.id ?? `${userId}-${Date.now()}`,
+      approvalUrl: data.links?.find((item) => item.rel === 'approve')?.href ?? null,
+      checkoutMode: this.getPayPalMode(),
+    };
+  }
+
   findPlans(includeInactive = false) {
     return this.planRepository.find({
       where: includeInactive ? {} : { isActive: true },
       order: { monthlyPrice: 'ASC' },
-    });
+    }).then((plans) => plans.map((plan) => this.serializePlan(plan)));
   }
 
   async findPlanById(planId: string) {
@@ -114,11 +268,18 @@ export class SubscriptionsService implements OnModuleInit {
   }
 
   async getUserSubscription(userId: string) {
-    const subscription = await this.userSubscriptionRepository.findOne({
-      where: { userId },
-      relations: { plan: true },
-      order: { createdAt: 'DESC' },
-    });
+    // Prefer an active subscription; fall back to the most recent one for display purposes
+    const subscription =
+      (await this.userSubscriptionRepository.findOne({
+        where: { userId, status: 'active' },
+        relations: { plan: true },
+        order: { createdAt: 'DESC' },
+      })) ??
+      (await this.userSubscriptionRepository.findOne({
+        where: { userId },
+        relations: { plan: true },
+        order: { createdAt: 'DESC' },
+      }));
 
     if (!subscription) {
       return {
@@ -134,7 +295,10 @@ export class SubscriptionsService implements OnModuleInit {
     return {
       hasSubscription: true,
       isActive,
-      subscription,
+      subscription: {
+        ...subscription,
+        plan: this.serializePlan(subscription.plan),
+      },
     };
   }
 
@@ -147,6 +311,43 @@ export class SubscriptionsService implements OnModuleInit {
     const plan = await this.findPlanById(payload.planId);
     if (!plan.isActive) {
       throw new BadRequestException('El plan seleccionado no está disponible');
+    }
+
+    if (provider === 'paypal' && this.hasRealPayPalConfig()) {
+      const paypalOrder = await this.createPayPalOrder(plan, userId);
+
+      const payment = this.paymentRepository.create({
+        userId,
+        planId: plan.id,
+        provider,
+        status: 'pending',
+        amount: plan.monthlyPrice,
+        currency: plan.currency,
+        externalPaymentId: paypalOrder.externalReferenceId,
+      });
+      await this.paymentRepository.save(payment);
+
+      const subscription = this.userSubscriptionRepository.create({
+        userId,
+        planId: plan.id,
+        provider,
+        status: 'past_due',
+        startsAt: new Date(),
+        endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        autoRenew: true,
+        externalSubscriptionId: paypalOrder.externalReferenceId,
+      });
+      const savedSubscription = await this.userSubscriptionRepository.save(subscription);
+
+      return {
+        message: 'Checkout PayPal iniciado',
+        provider,
+        checkoutMode: paypalOrder.checkoutMode,
+        approvalUrl: paypalOrder.approvalUrl,
+        payment,
+        subscription: savedSubscription,
+        plan: this.serializePlan(plan),
+      };
     }
 
     const transaction = this.paymentRepository.create({
@@ -193,10 +394,10 @@ export class SubscriptionsService implements OnModuleInit {
     return {
       message: `Suscripción activada con ${provider === 'stripe' ? 'Stripe' : 'PayPal'}`,
       provider,
-      checkoutMode: process.env.NODE_ENV === 'production' ? 'live' : 'sandbox',
+      checkoutMode: provider === 'paypal' ? this.getPayPalMode() : (process.env.NODE_ENV === 'production' ? 'live' : 'sandbox'),
       payment: transaction,
       subscription: savedSubscription,
-      plan,
+      plan: this.serializePlan(plan),
     };
   }
 
@@ -244,5 +445,231 @@ export class SubscriptionsService implements OnModuleInit {
     }
 
     return this.userSubscriptionRepository.save(subscription);
+  }
+
+  async handleStripeWebhook(payload: unknown, signature?: string, webhookSecret?: string) {
+    this.assertWebhookSecret('stripe', webhookSecret);
+
+    const event = payload as Record<string, unknown>;
+    const eventType = typeof event.type === 'string' ? event.type : 'unknown';
+    const dataObject = this.getNestedObject(event, ['data', 'object']);
+
+    switch (eventType) {
+      case 'invoice.payment_succeeded': {
+        const externalSubscriptionId = this.getStringValue(dataObject, ['subscription']);
+        const externalPaymentId = this.getStringValue(dataObject, ['payment_intent']);
+        if (externalSubscriptionId) {
+          await this.updateSubscriptionByExternalId(externalSubscriptionId, 'active');
+        }
+        if (externalPaymentId) {
+          await this.updatePaymentByExternalId(externalPaymentId, 'completed');
+        }
+        break;
+      }
+      case 'invoice.payment_failed': {
+        const externalSubscriptionId = this.getStringValue(dataObject, ['subscription']);
+        if (externalSubscriptionId) {
+          await this.updateSubscriptionByExternalId(externalSubscriptionId, 'past_due');
+        }
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const externalSubscriptionId = this.getStringValue(dataObject, ['id']);
+        if (externalSubscriptionId) {
+          await this.updateSubscriptionByExternalId(externalSubscriptionId, 'cancelled');
+        }
+        break;
+      }
+      case 'customer.subscription.updated': {
+        const externalSubscriptionId = this.getStringValue(dataObject, ['id']);
+        const statusRaw = this.getStringValue(dataObject, ['status']);
+        if (externalSubscriptionId && statusRaw) {
+          const mappedStatus = this.mapStripeStatus(statusRaw);
+          await this.updateSubscriptionByExternalId(externalSubscriptionId, mappedStatus);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    return {
+      received: true,
+      provider: 'stripe',
+      eventType,
+      verified: Boolean(signature),
+      mode: process.env.NODE_ENV === 'production' ? 'live' : 'sandbox',
+    };
+  }
+
+  private assertWebhookSecret(provider: 'stripe' | 'paypal', incomingSecret?: string) {
+    const configuredSecret = provider === 'stripe' ? process.env.STRIPE_WEBHOOK_SECRET : process.env.PAYPAL_WEBHOOK_SECRET;
+    if (!configuredSecret) {
+      return;
+    }
+
+    if (!incomingSecret || incomingSecret !== configuredSecret) {
+      throw new UnauthorizedException(`Webhook ${provider} no autorizado`);
+    }
+  }
+
+  async handlePaypalWebhook(payload: unknown, headers: PayPalWebhookHeaders = {}) {
+    const verified = await this.verifyPaypalWebhook(payload, headers);
+    const event = payload as Record<string, unknown>;
+    const eventType = typeof event.event_type === 'string' ? event.event_type : 'unknown';
+    const resource = this.getNestedObject(event, ['resource']);
+    const externalReferenceId =
+      this.getStringValue(resource, ['id']) ??
+      this.getStringValue(resource, ['billing_agreement_id']) ??
+      this.getStringValue(resource, ['subscription_id']) ??
+      this.getStringValue(resource, ['supplementary_data', 'related_ids', 'order_id']);
+
+    const mappedStatus = this.mapPaypalStatus(eventType);
+
+    if (externalReferenceId && mappedStatus) {
+      await this.updateSubscriptionByExternalId(externalReferenceId, mappedStatus);
+      if (mappedStatus === 'active') {
+        await this.updatePaymentByExternalId(externalReferenceId, 'completed');
+      }
+      if (mappedStatus === 'past_due') {
+        await this.updatePaymentByExternalId(externalReferenceId, 'failed');
+      }
+    }
+
+    return {
+      received: true,
+      provider: 'paypal',
+      eventType,
+      verified,
+      mode: this.getPayPalMode(),
+      status: mappedStatus ?? 'ignored',
+    };
+  }
+
+  private async verifyPaypalWebhook(payload: unknown, headers: PayPalWebhookHeaders) {
+    const configuredSecret = process.env.PAYPAL_WEBHOOK_SECRET;
+    const incomingSecret = this.getHeaderValue(headers, 'x-webhook-secret');
+    if (!configuredSecret) {
+      return Boolean(incomingSecret);
+    }
+
+    if (incomingSecret && incomingSecret === configuredSecret) {
+      return true;
+    }
+
+    const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+    if (!webhookId) {
+      return false;
+    }
+
+    const accessToken = await this.getPayPalAccessToken();
+    const response = await fetch(`${this.getPayPalBaseUrl()}/v1/notifications/verify-webhook-signature`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        auth_algo: this.getHeaderValue(headers, 'paypal-auth-algo') ?? '',
+        cert_url: this.getHeaderValue(headers, 'paypal-cert-url') ?? '',
+        transmission_id: this.getHeaderValue(headers, 'paypal-transmission-id') ?? '',
+        transmission_sig: this.getHeaderValue(headers, 'paypal-transmission-sig') ?? '',
+        transmission_time: this.getHeaderValue(headers, 'paypal-transmission-time') ?? '',
+        webhook_id: webhookId,
+        webhook_event: payload,
+      }),
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = (await response.json()) as { verification_status?: string };
+    return data.verification_status === 'SUCCESS';
+  }
+
+  private async updateSubscriptionByExternalId(externalSubscriptionId: string, status: SubscriptionStatus) {
+    const subscription = await this.userSubscriptionRepository.findOne({ where: { externalSubscriptionId } });
+    if (!subscription) {
+      return;
+    }
+
+    subscription.status = status;
+    if (status === 'cancelled' || status === 'expired') {
+      subscription.endsAt = new Date();
+    }
+
+    await this.userSubscriptionRepository.save(subscription);
+  }
+
+  private async updatePaymentByExternalId(externalPaymentId: string, status: 'pending' | 'completed' | 'failed') {
+    const payment = await this.paymentRepository.findOne({ where: { externalPaymentId } });
+    if (!payment) {
+      return;
+    }
+
+    payment.status = status;
+    await this.paymentRepository.save(payment);
+  }
+
+  private getNestedObject(source: Record<string, unknown>, path: string[]) {
+    let current: unknown = source;
+    for (const key of path) {
+      if (!current || typeof current !== 'object' || !(key in current)) {
+        return {} as Record<string, unknown>;
+      }
+      current = (current as Record<string, unknown>)[key];
+    }
+
+    return current && typeof current === 'object' ? (current as Record<string, unknown>) : ({} as Record<string, unknown>);
+  }
+
+  private getStringValue(source: Record<string, unknown>, path: string[]) {
+    let current: unknown = source;
+    for (const key of path) {
+      if (!current || typeof current !== 'object' || !(key in current)) {
+        return null;
+      }
+      current = (current as Record<string, unknown>)[key];
+    }
+
+    return typeof current === 'string' && current.trim() ? current : null;
+  }
+
+  private mapStripeStatus(status: string): SubscriptionStatus {
+    switch (status) {
+      case 'active':
+        return 'active';
+      case 'past_due':
+      case 'unpaid':
+        return 'past_due';
+      case 'canceled':
+        return 'cancelled';
+      case 'incomplete_expired':
+        return 'expired';
+      default:
+        return 'active';
+    }
+  }
+
+  private mapPaypalStatus(eventType: string): SubscriptionStatus | null {
+    switch (eventType) {
+      case 'CHECKOUT.ORDER.APPROVED':
+      case 'BILLING.SUBSCRIPTION.APPROVED':
+      case 'BILLING.SUBSCRIPTION.ACTIVATED':
+      case 'PAYMENT.CAPTURE.COMPLETED':
+      case 'PAYMENT.SALE.COMPLETED':
+        return 'active';
+      case 'PAYMENT.CAPTURE.DENIED':
+      case 'PAYMENT.SALE.DENIED':
+      case 'BILLING.SUBSCRIPTION.SUSPENDED':
+        return 'past_due';
+      case 'BILLING.SUBSCRIPTION.CANCELLED':
+        return 'cancelled';
+      case 'BILLING.SUBSCRIPTION.EXPIRED':
+        return 'expired';
+      default:
+        return null;
+    }
   }
 }

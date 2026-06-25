@@ -1,6 +1,17 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Client } from '../clients/client.entity';
 import { Expediente } from '../expedientes/expediente.entity';
+import { DocumentGeneration } from './document-generation.entity';
+import { User } from '../auth/user.entity';
 
 export type DocumentFormat = 'docx' | 'pdf';
 
@@ -46,6 +57,16 @@ export class LegalDocument {
 
   @Column({ type: 'uuid', nullable: true })
   expedienteId!: string | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'createdByUserId' })
+  createdByUser?: User | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  createdByUserId!: string | null;
+
+  @OneToMany(() => DocumentGeneration, (generation) => generation.document)
+  generations!: DocumentGeneration[];
 
   @CreateDateColumn()
   createdAt!: Date;

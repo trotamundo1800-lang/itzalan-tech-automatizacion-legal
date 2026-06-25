@@ -309,27 +309,27 @@ export default function DocumentosPage() {
   return (
     <FeatureShell module={featureModules.documentos}>
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <section className="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">{editingId ? 'Editar documento' : 'Nuevo documento'}</h2>
+        <section className="rounded-[1rem] border border-slate-700 bg-[#111827] p-6">
+          <h2 className="text-xl font-semibold text-slate-50">{editingId ? 'Editar documento' : 'Nuevo documento'}</h2>
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             <input
               value={form.nombreArchivo}
               onChange={(event) => setForm((current) => ({ ...current, nombreArchivo: event.target.value }))}
               placeholder="Nombre de archivo"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               required
             />
             <input
               value={form.tipoDocumento}
               onChange={(event) => setForm((current) => ({ ...current, tipoDocumento: event.target.value }))}
               placeholder="Tipo de documento"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               required
             />
             <select
               value={form.formato}
               onChange={(event) => setForm((current) => ({ ...current, formato: event.target.value as 'docx' | 'pdf' }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
             >
               <option value="docx">docx</option>
               <option value="pdf">pdf</option>
@@ -338,7 +338,7 @@ export default function DocumentosPage() {
               value={form.plantilla}
               onChange={(event) => setForm((current) => ({ ...current, plantilla: event.target.value }))}
               placeholder="Plantilla del documento. Usa {{variable}} para marcadores."
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               rows={5}
               required
             />
@@ -346,13 +346,13 @@ export default function DocumentosPage() {
               value={form.variablesText}
               onChange={(event) => setForm((current) => ({ ...current, variablesText: event.target.value }))}
               placeholder='Variables en JSON, por ejemplo {"cliente":"Juan"}'
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 font-mono text-xs"
+              className="lex-input mt-0 font-mono text-xs"
               rows={6}
             />
             <select
               value={form.clienteId}
               onChange={(event) => setForm((current) => ({ ...current, clienteId: event.target.value, expedienteId: '' }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
             >
               <option value="">Sin cliente</option>
               {clients.map((client) => (
@@ -364,7 +364,7 @@ export default function DocumentosPage() {
             <select
               value={form.expedienteId}
               onChange={(event) => setForm((current) => ({ ...current, expedienteId: event.target.value }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
             >
               <option value="">Sin expediente</option>
               {filteredExpedientes.map((expediente) => (
@@ -377,18 +377,18 @@ export default function DocumentosPage() {
               value={form.observaciones}
               onChange={(event) => setForm((current) => ({ ...current, observaciones: event.target.value }))}
               placeholder="Observaciones"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               rows={2}
             />
 
-            {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
-            {formSuccess ? <p className="text-sm text-emerald-700">{formSuccess}</p> : null}
+            {formError ? <p className="lex-notice-error">{formError}</p> : null}
+            {formSuccess ? <p className="lex-notice-success">{formSuccess}</p> : null}
 
             <div className="flex flex-wrap gap-3">
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+                className="lex-button-primary"
               >
                 {saving ? 'Guardando...' : editingId ? 'Actualizar documento' : 'Crear documento'}
               </button>
@@ -396,7 +396,7 @@ export default function DocumentosPage() {
                 type="button"
                 onClick={() => createQuickGenerated('docx')}
                 disabled={saving}
-                className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700"
+                className="lex-button-secondary"
               >
                 Generar Word
               </button>
@@ -404,7 +404,7 @@ export default function DocumentosPage() {
                 type="button"
                 onClick={() => createQuickGenerated('pdf')}
                 disabled={saving}
-                className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700"
+                className="lex-button-secondary"
               >
                 Generar PDF
               </button>
@@ -412,7 +412,7 @@ export default function DocumentosPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700"
+                  className="lex-button-secondary"
                 >
                   Cancelar edición
                 </button>
@@ -421,42 +421,42 @@ export default function DocumentosPage() {
           </form>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">Documentos registrados</h2>
+        <section className="rounded-[1rem] border border-slate-700 bg-[#111827] p-6">
+          <h2 className="text-xl font-semibold text-slate-50">Documentos registrados</h2>
 
-          {loading ? <p className="mt-4 text-sm text-slate-600">Cargando...</p> : null}
-          {!loading && error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+          {loading ? <p className="mt-4 text-sm text-slate-300">Cargando...</p> : null}
+          {!loading && error ? <p className="mt-4 lex-notice-error">{error}</p> : null}
 
           {!loading && !error ? (
             <div className="mt-4 space-y-3">
-              {documents.length === 0 ? <p className="text-sm text-slate-500">No hay documentos aún.</p> : null}
+              {documents.length === 0 ? <p className="text-sm text-slate-400">No hay documentos aún.</p> : null}
               {documents.map((document) => (
-                <article key={document.id} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                  <p className="font-semibold text-slate-900">{document.nombreArchivo}</p>
-                  <p className="text-sm text-slate-600">Tipo: {document.tipoDocumento}</p>
-                  <p className="text-sm text-slate-600">Formato: {document.formato.toUpperCase()}</p>
-                  <p className="text-sm text-slate-600">Cliente: {document.cliente?.nombre || 'Sin cliente'}</p>
-                  <p className="text-sm text-slate-600">Expediente: {document.expediente?.titulo || 'Sin expediente'}</p>
-                  <p className="text-xs text-slate-500">{new Date(document.createdAt).toLocaleString()}</p>
+                <article key={document.id} className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
+                  <p className="font-semibold text-slate-50">{document.nombreArchivo}</p>
+                  <p className="text-sm text-slate-300">Tipo: {document.tipoDocumento}</p>
+                  <p className="text-sm text-slate-300">Formato: {document.formato.toUpperCase()}</p>
+                  <p className="text-sm text-slate-300">Cliente: {document.cliente?.nombre || 'Sin cliente'}</p>
+                  <p className="text-sm text-slate-300">Expediente: {document.expediente?.titulo || 'Sin expediente'}</p>
+                  <p className="text-xs text-slate-400">{new Date(document.createdAt).toLocaleString()}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => startEdit(document)}
-                      className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+                      className="lex-button-secondary px-3 py-1 text-xs"
                     >
                       Editar
                     </button>
                     <button
                       type="button"
                       onClick={() => removeDocument(document.id)}
-                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700"
+                      className="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-300"
                     >
                       Eliminar
                     </button>
                     <button
                       type="button"
                       onClick={() => setPreviewId((current) => (current === document.id ? null : document.id))}
-                      className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+                      className="lex-button-secondary px-3 py-1 text-xs"
                     >
                       {previewId === document.id ? 'Ocultar contenido' : 'Ver contenido'}
                     </button>
@@ -469,12 +469,12 @@ export default function DocumentosPage() {
       </div>
 
       {previewDocument ? (
-        <section className="mt-6 rounded-3xl bg-white p-6 ring-1 ring-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">Contenido: {previewDocument.nombreArchivo}</h2>
-          <p className="mt-2 text-sm text-slate-600">
+        <section className="mt-6 rounded-[1rem] border border-slate-700 bg-[#111827] p-6">
+          <h2 className="text-xl font-semibold text-slate-50">Contenido: {previewDocument.nombreArchivo}</h2>
+          <p className="mt-2 text-sm text-slate-300">
             Vista de texto generado a partir de la plantilla y variables persistidas.
           </p>
-          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-slate-50 p-4 text-sm text-slate-700 ring-1 ring-slate-200">
+          <pre className="mt-4 whitespace-pre-wrap rounded-2xl border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
             {previewDocument.contenidoTexto}
           </pre>
         </section>

@@ -34,33 +34,15 @@ export function ContractsForm() {
   const [draftsLoading, setDraftsLoading] = useState(true);
   const [draftsError, setDraftsError] = useState('');
 
-  function getAuthHeaders() {
-    const accessToken =
-      typeof window !== 'undefined' ? localStorage.getItem('itzalanAccessToken') : null;
-
-    if (!accessToken) {
-      throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
-    }
-
-    return {
-      Authorization: `Bearer ${accessToken}`,
-    };
-  }
-
   useEffect(() => {
     async function loadDrafts() {
       setDraftsLoading(true);
       setDraftsError('');
 
       try {
-        const response = await apiFetch('/api/contracts/drafts', {
-          headers: getAuthHeaders(),
-        });
+        const response = await apiFetch('/api/contracts/drafts');
 
         if (!response.ok) {
-          if (response.status === 401 || response.status === 403) {
-            throw new Error('Tu sesión no es válida para consultar borradores.');
-          }
           throw new Error('No se pudieron cargar los borradores guardados.');
         }
 
@@ -85,7 +67,6 @@ export function ContractsForm() {
     try {
       const response = await apiFetch('/api/contracts/generate', {
         method: 'POST',
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           tipoContrato,
           nombreCliente: nombreCliente.trim(),
@@ -94,9 +75,6 @@ export function ContractsForm() {
       });
 
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('Tu sesión no es válida para generar contratos.');
-        }
         const data = await response.json().catch(() => null);
         const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
         throw new Error(message || 'No se pudo generar el contrato.');
@@ -115,24 +93,24 @@ export function ContractsForm() {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+        <section className="rounded-[1rem] border border-slate-700 bg-[#111827] p-6">
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold text-slate-900">Generador de contrato</h2>
-            <p className="text-sm leading-6 text-slate-600">
-              Completa los datos base del asunto para generar una respuesta simulada desde la API de LEXIA.
+            <h2 className="text-2xl font-semibold text-slate-50">Generador de contrato</h2>
+            <p className="text-sm leading-6 text-slate-300">
+              Completa los datos base del asunto para generar una respuesta simulada desde la API de la plataforma.
             </p>
           </div>
 
           <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="tipoContrato" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="tipoContrato" className="lex-label">
                 Tipo de contrato
               </label>
               <select
                 id="tipoContrato"
                 value={tipoContrato}
                 onChange={(event) => setTipoContrato(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                className="lex-input"
               >
                 {contractTypes.map((type) => (
                   <option key={type} value={type}>
@@ -143,7 +121,7 @@ export function ContractsForm() {
             </div>
 
             <div>
-              <label htmlFor="nombreCliente" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="nombreCliente" className="lex-label">
                 Nombre del cliente
               </label>
               <input
@@ -152,12 +130,12 @@ export function ContractsForm() {
                 onChange={(event) => setNombreCliente(event.target.value)}
                 required
                 placeholder="Ej. María López Consultores"
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                className="lex-input"
               />
             </div>
 
             <div>
-              <label htmlFor="descripcionCaso" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="descripcionCaso" className="lex-label">
                 Descripción del caso
               </label>
               <textarea
@@ -168,16 +146,16 @@ export function ContractsForm() {
                 minLength={10}
                 rows={6}
                 placeholder="Describe el contexto jurídico, alcance del acuerdo y puntos clave a proteger."
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                className="lex-input"
               />
             </div>
 
-            {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+            {error ? <p className="lex-notice-error">{error}</p> : null}
 
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="lex-button-primary disabled:cursor-not-allowed"
             >
               {loading ? 'Generando contrato...' : 'Generar borrador'}
             </button>
@@ -240,16 +218,16 @@ export function ContractsForm() {
         </section>
       </div>
 
-      <section className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+      <section className="rounded-[1rem] border border-slate-700 bg-[#111827] p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Persistencia</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">Borradores generados</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Persistencia</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-50">Borradores generados</h2>
           </div>
         </div>
 
         {draftsLoading ? (
-          <div className="mt-6 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 ring-1 ring-slate-200">
+          <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-900/60 p-5 text-sm text-slate-300">
             Cargando borradores guardados...
           </div>
         ) : null}
@@ -261,7 +239,7 @@ export function ContractsForm() {
         ) : null}
 
         {!draftsLoading && !draftsError && drafts.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-700 p-5 text-sm text-slate-400">
             Aún no hay borradores guardados. Genera el primero desde el formulario superior.
           </div>
         ) : null}
@@ -269,28 +247,28 @@ export function ContractsForm() {
         {!draftsLoading && !draftsError && drafts.length > 0 ? (
           <div className="mt-6 grid gap-4">
             {drafts.map((draft) => (
-              <article key={draft.id} className="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
+              <article key={draft.id} className="rounded-2xl border border-slate-700 bg-slate-900/60 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{draft.tipoContrato}</p>
-                    <h3 className="mt-2 text-lg font-semibold text-slate-900">{draft.titulo}</h3>
-                    <p className="mt-1 text-sm text-slate-600">Cliente: {draft.nombreCliente}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{draft.tipoContrato}</p>
+                    <h3 className="mt-2 text-lg font-semibold text-slate-50">{draft.titulo}</h3>
+                    <p className="mt-1 text-sm text-slate-300">Cliente: {draft.nombreCliente}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-3 text-right text-xs text-slate-500">
+                  <div className="flex flex-col items-end gap-3 text-right text-xs text-slate-400">
                     <div>
                       <p>ID: {draft.id}</p>
                       <p>{new Date(draft.createdAt).toLocaleString('es-MX')}</p>
                     </div>
                     <Link
                       href={`/contratos/${draft.id}`}
-                      className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                      className="lex-button-primary px-4 py-2"
                     >
                       Ver
                     </Link>
                   </div>
                 </div>
 
-                <p className="mt-4 text-sm leading-6 text-slate-600">{draft.resumen}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-300">{draft.resumen}</p>
               </article>
             ))}
           </div>

@@ -24,6 +24,28 @@ type Expediente = {
   };
 };
 
+type IaConversationMessage = {
+  id: string;
+  preguntaUsuario: string;
+  respuestaIa: string;
+  modo: 'openai' | 'local';
+  contextoJuridico: string;
+  analisis: string;
+  recomendaciones: string[];
+  riesgos: string[];
+  proyeccionCaso: string;
+  createdAt: string;
+};
+
+type IaConversationSummary = {
+  id: string;
+  title: string;
+  contextoJuridico: string;
+  expedienteId: string | null;
+  latestMessage: IaConversationMessage | null;
+  messagesCount: number;
+};
+
 const initialForm = {
   titulo: '',
   descripcion: '',
@@ -59,6 +81,7 @@ export default function ExpedientesPage() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(initialForm);
+  const [iaByExpediente, setIaByExpediente] = useState<Record<string, IaConversationSummary[]>>({});
 
   function getAuthHeaders() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('itzalanAccessToken') : null;
@@ -108,6 +131,24 @@ export default function ExpedientesPage() {
 
       setExpedientes((await expedientesResponse.json()) as Expediente[]);
       setClients((await clientsResponse.json()) as ClientOption[]);
+
+      const expedientesData = (await expedientesResponse.clone().json()) as Expediente[];
+      const iaEntries = await Promise.all(
+        expedientesData.map(async (expediente) => {
+          const iaResponse = await apiFetch(`/api/ia-juridica/conversations?expedienteId=${expediente.id}`, {
+            headers: getAuthHeaders(),
+          });
+
+          if (!iaResponse.ok) {
+            return [expediente.id, []] as const;
+          }
+
+          const conversations = (await iaResponse.json()) as IaConversationSummary[];
+          return [expediente.id, conversations] as const;
+        }),
+      );
+
+      setIaByExpediente(Object.fromEntries(iaEntries));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la información.');
     } finally {
@@ -204,21 +245,21 @@ export default function ExpedientesPage() {
   return (
     <FeatureShell module={featureModules.expedientes}>
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">{editingId ? 'Editar expediente' : 'Nuevo expediente'}</h2>
+        <section className="rounded-xl border border-slate-700 bg-[#111827] p-6">
+          <h2 className="text-xl font-semibold text-slate-50">{editingId ? 'Editar expediente' : 'Nuevo expediente'}</h2>
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             <input
               value={form.titulo}
               onChange={(event) => setForm((current) => ({ ...current, titulo: event.target.value }))}
               placeholder="Título del expediente"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               required
             />
             <textarea
               value={form.descripcion}
               onChange={(event) => setForm((current) => ({ ...current, descripcion: event.target.value }))}
               placeholder="Descripción"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               rows={4}
               required
             />
@@ -226,13 +267,13 @@ export default function ExpedientesPage() {
               value={form.tipo}
               onChange={(event) => setForm((current) => ({ ...current, tipo: event.target.value }))}
               placeholder="Tipo de expediente"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               required
             />
             <select
               value={form.estado}
               onChange={(event) => setForm((current) => ({ ...current, estado: event.target.value as 'abierto' | 'en_proceso' | 'cerrado' }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
             >
               <option value="abierto">abierto</option>
               <option value="en_proceso">en_proceso</option>
@@ -242,13 +283,13 @@ export default function ExpedientesPage() {
               type="date"
               value={form.fechaApertura}
               onChange={(event) => setForm((current) => ({ ...current, fechaApertura: event.target.value }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               required
             />
             <select
               value={form.clienteId}
               onChange={(event) => setForm((current) => ({ ...current, clienteId: event.target.value }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               required
             >
               <option value="">Selecciona cliente</option>
@@ -259,14 +300,14 @@ export default function ExpedientesPage() {
               ))}
             </select>
 
-            {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
-            {formSuccess ? <p className="text-sm text-emerald-700">{formSuccess}</p> : null}
+            {formError ? <p className="text-sm text-red-300">{formError}</p> : null}
+            {formSuccess ? <p className="text-sm text-emerald-300">{formSuccess}</p> : null}
 
             <div className="flex gap-3">
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+                className="lex-button-primary"
               >
                 {saving ? 'Guardando...' : editingId ? 'Actualizar expediente' : 'Crear expediente'}
               </button>
@@ -274,7 +315,7 @@ export default function ExpedientesPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700"
+                  className="lex-button-secondary"
                 >
                   Cancelar edición
                 </button>
@@ -283,33 +324,65 @@ export default function ExpedientesPage() {
           </form>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">Expedientes registrados</h2>
+        <section className="rounded-xl border border-slate-700 bg-[#111827] p-6">
+          <h2 className="text-xl font-semibold text-slate-50">Expedientes registrados</h2>
 
-          {loading ? <p className="mt-4 text-sm text-slate-600">Cargando...</p> : null}
-          {!loading && error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+          {loading ? <p className="mt-4 text-sm text-slate-300">Cargando...</p> : null}
+          {!loading && error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
 
           {!loading && !error ? (
             <div className="mt-4 space-y-3">
               {expedientes.length === 0 ? <p className="text-sm text-slate-500">No hay expedientes aún.</p> : null}
               {expedientes.map((expediente) => (
-                <article key={expediente.id} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                  <p className="font-semibold text-slate-900">{expediente.titulo}</p>
-                  <p className="text-sm text-slate-600">Tipo: {expediente.tipo}</p>
-                  <p className="text-sm text-slate-600">Cliente: {expediente.cliente?.nombre || expediente.clienteId}</p>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{expediente.estado}</p>
+                <article key={expediente.id} className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-slate-50">{expediente.titulo}</p>
+                    <span className={expediente.estado === 'cerrado' ? 'lex-badge-success' : expediente.estado === 'en_proceso' ? 'lex-badge-warning' : 'lex-badge-neutral'}>
+                      {expediente.estado}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-300">Tipo: {expediente.tipo}</p>
+                  <p className="text-sm text-slate-300">Cliente: {expediente.cliente?.nombre || expediente.clienteId}</p>
+
+                  <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/40 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">IA del expediente</p>
+                    {(iaByExpediente[expediente.id] ?? []).length === 0 ? (
+                      <p className="mt-2 text-xs text-slate-500">Sin consultas IA asociadas todavía.</p>
+                    ) : (
+                      <div className="mt-2 space-y-2">
+                        {(iaByExpediente[expediente.id] ?? []).slice(0, 2).map((conversation) => (
+                          <div key={conversation.id} className="rounded-md border border-slate-700 bg-slate-900/60 p-2">
+                            <p className="text-xs font-semibold text-slate-200">{conversation.title}</p>
+                            {conversation.latestMessage ? (
+                              <>
+                                <p className="mt-1 text-xs text-slate-300">Análisis: {conversation.latestMessage.analisis}</p>
+                                <p className="mt-1 text-xs text-amber-300">Riesgos: {conversation.latestMessage.riesgos.join(' | ')}</p>
+                                <p className="mt-1 text-xs text-slate-300">
+                                  Recomendaciones: {conversation.latestMessage.recomendaciones.join(' | ')}
+                                </p>
+                                <p className="mt-1 text-xs text-emerald-300">Proyección: {conversation.latestMessage.proyeccionCaso}</p>
+                              </>
+                            ) : (
+                              <p className="mt-1 text-xs text-slate-500">Conversación sin mensajes aún.</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="mt-3 flex gap-2">
                     <button
                       type="button"
                       onClick={() => startEdit(expediente)}
-                      className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+                      className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200"
                     >
                       Editar
                     </button>
                     <button
                       type="button"
                       onClick={() => removeExpediente(expediente.id)}
-                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700"
+                      className="rounded-lg border border-red-500/50 px-3 py-1 text-xs font-semibold text-red-300"
                     >
                       Eliminar
                     </button>

@@ -217,20 +217,20 @@ export default function AgendaPage() {
   return (
     <FeatureShell module={featureModules.agenda}>
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">{editingId ? 'Editar evento' : 'Nuevo evento'}</h2>
+        <section className="rounded-xl border border-slate-700 bg-[#111827] p-6">
+          <h2 className="text-xl font-semibold text-slate-50">{editingId ? 'Editar evento' : 'Nuevo evento'}</h2>
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             <input
               type="datetime-local"
               value={form.fechaHora}
               onChange={(event) => setForm((current) => ({ ...current, fechaHora: event.target.value }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               required
             />
             <select
               value={form.tipoEvento}
               onChange={(event) => setForm((current) => ({ ...current, tipoEvento: event.target.value as typeof form.tipoEvento }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
             >
               <option value="audiencia">audiencia</option>
               <option value="vencimiento">vencimiento</option>
@@ -240,7 +240,7 @@ export default function AgendaPage() {
             <select
               value={form.estado}
               onChange={(event) => setForm((current) => ({ ...current, estado: event.target.value as typeof form.estado }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
             >
               <option value="pendiente">pendiente</option>
               <option value="completado">completado</option>
@@ -250,20 +250,20 @@ export default function AgendaPage() {
               value={form.recordatorio}
               onChange={(event) => setForm((current) => ({ ...current, recordatorio: event.target.value }))}
               placeholder="Recordatorio"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               rows={2}
             />
             <textarea
               value={form.observaciones}
               onChange={(event) => setForm((current) => ({ ...current, observaciones: event.target.value }))}
               placeholder="Observaciones"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
               rows={3}
             />
             <select
               value={form.clienteId}
               onChange={(event) => setForm((current) => ({ ...current, clienteId: event.target.value }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
             >
               <option value="">Sin cliente</option>
               {clients.map((client) => (
@@ -275,7 +275,7 @@ export default function AgendaPage() {
             <select
               value={form.expedienteId}
               onChange={(event) => setForm((current) => ({ ...current, expedienteId: event.target.value }))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+              className="lex-input mt-0"
             >
               <option value="">Sin expediente</option>
               {expedientes.map((expediente) => (
@@ -285,14 +285,14 @@ export default function AgendaPage() {
               ))}
             </select>
 
-            {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
-            {formSuccess ? <p className="text-sm text-emerald-700">{formSuccess}</p> : null}
+            {formError ? <p className="text-sm text-red-300">{formError}</p> : null}
+            {formSuccess ? <p className="text-sm text-emerald-300">{formSuccess}</p> : null}
 
             <div className="flex gap-3">
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+                className="lex-button-primary"
               >
                 {saving ? 'Guardando...' : editingId ? 'Actualizar evento' : 'Crear evento'}
               </button>
@@ -300,7 +300,7 @@ export default function AgendaPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700"
+                  className="lex-button-secondary"
                 >
                   Cancelar edición
                 </button>
@@ -309,36 +309,40 @@ export default function AgendaPage() {
           </form>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">Eventos registrados</h2>
+        <section className="rounded-xl border border-slate-700 bg-[#111827] p-6">
+          <h2 className="text-xl font-semibold text-slate-50">Eventos registrados</h2>
 
-          {loading ? <p className="mt-4 text-sm text-slate-600">Cargando...</p> : null}
-          {!loading && error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+          {loading ? <p className="mt-4 text-sm text-slate-300">Cargando...</p> : null}
+          {!loading && error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
 
           {!loading && !error ? (
             <div className="mt-4 space-y-3">
               {events.length === 0 ? <p className="text-sm text-slate-500">No hay eventos aún.</p> : null}
               {events.map((evento) => (
-                <article key={evento.id} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                  <p className="font-semibold text-slate-900">{evento.tipoEvento}</p>
-                  <p className="text-sm text-slate-600">Fecha: {new Date(evento.fechaHora).toLocaleString()}</p>
-                  <p className="text-sm text-slate-600">Estado: {evento.estado}</p>
-                  <p className="text-sm text-slate-600">Cliente: {evento.cliente?.nombre || 'Sin cliente'}</p>
-                  <p className="text-sm text-slate-600">Expediente: {evento.expediente?.titulo || 'Sin expediente'}</p>
-                  <p className="text-sm text-slate-600">Recordatorio: {evento.recordatorio || 'Sin recordatorio'}</p>
-                  {evento.observaciones ? <p className="mt-2 text-sm text-slate-600">{evento.observaciones}</p> : null}
+                <article key={evento.id} className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-slate-50">{evento.tipoEvento}</p>
+                    <span className={evento.estado === 'completado' ? 'lex-badge-success' : evento.estado === 'cancelado' ? 'lex-badge-danger' : 'lex-badge-warning'}>
+                      {evento.estado}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-300">Fecha: {new Date(evento.fechaHora).toLocaleString()}</p>
+                  <p className="text-sm text-slate-300">Cliente: {evento.cliente?.nombre || 'Sin cliente'}</p>
+                  <p className="text-sm text-slate-300">Expediente: {evento.expediente?.titulo || 'Sin expediente'}</p>
+                  <p className="text-sm text-slate-300">Recordatorio: {evento.recordatorio || 'Sin recordatorio'}</p>
+                  {evento.observaciones ? <p className="mt-2 text-sm text-slate-300">{evento.observaciones}</p> : null}
                   <div className="mt-3 flex gap-2">
                     <button
                       type="button"
                       onClick={() => startEdit(evento)}
-                      className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+                      className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200"
                     >
                       Editar
                     </button>
                     <button
                       type="button"
                       onClick={() => removeEvent(evento.id)}
-                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700"
+                      className="rounded-lg border border-red-500/50 px-3 py-1 text-xs font-semibold text-red-300"
                     >
                       Eliminar
                     </button>

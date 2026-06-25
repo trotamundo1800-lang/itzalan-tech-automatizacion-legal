@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 import { CheckoutSubscriptionDto } from './dto/checkout-subscription.dto';
 import { CreatePlanDto } from './dto/create-plan.dto';
@@ -11,6 +11,31 @@ import { Roles } from '../auth/roles.decorator';
 @Controller('api/subscriptions')
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
+
+  @Post('webhooks/stripe')
+  handleStripeWebhook(
+    @Body() payload: unknown,
+    @Headers('stripe-signature') signature?: string,
+    @Headers('x-webhook-secret') webhookSecret?: string,
+  ) {
+    return this.subscriptionsService.handleStripeWebhook(payload, signature, webhookSecret);
+  }
+
+  @Post('webhook/paypal')
+  handlePaypalWebhook(
+    @Body() payload: unknown,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.subscriptionsService.handlePaypalWebhook(payload, headers);
+  }
+
+  @Post('webhooks/paypal')
+  handlePaypalWebhookLegacy(
+    @Body() payload: unknown,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.subscriptionsService.handlePaypalWebhook(payload, headers);
+  }
 
   @Get('plans')
   listPlans() {

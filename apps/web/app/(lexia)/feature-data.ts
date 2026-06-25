@@ -8,7 +8,7 @@ export type FeatureModule = {
     description: string;
   }>;
   backend: {
-    status: 'planned' | 'connected';
+    status: 'planned';
     endpoint: string;
     method: 'GET' | 'POST';
   };
@@ -18,7 +18,7 @@ export const featureModules: Record<FeatureModule['slug'], FeatureModule> = {
   contratos: {
     slug: 'contratos',
     title: 'Generar contrato',
-    eyebrow: 'LEXIA / Contratos',
+    eyebrow: 'Contratos',
     description:
       'Prepara contratos asistidos con plantillas, variables del caso y validaciones previas al envio al cliente.',
     highlights: [
@@ -36,15 +36,15 @@ export const featureModules: Record<FeatureModule['slug'], FeatureModule> = {
       },
     ],
     backend: {
-      status: 'connected',
-      endpoint: '/api/contracts/generate',
+      status: 'planned',
+      endpoint: '/contracts/generate',
       method: 'POST',
     },
   },
   agenda: {
     slug: 'agenda',
     title: 'Agenda procesal',
-    eyebrow: 'LEXIA / Agenda',
+    eyebrow: 'Agenda',
     description:
       'Consulta vencimientos, audiencias y recordatorios operativos para el seguimiento de expedientes y clientes.',
     highlights: [
@@ -62,15 +62,15 @@ export const featureModules: Record<FeatureModule['slug'], FeatureModule> = {
       },
     ],
     backend: {
-      status: 'connected',
-      endpoint: '/api/agenda',
+      status: 'planned',
+      endpoint: '/calendar/events',
       method: 'GET',
     },
   },
   analisis: {
     slug: 'analisis',
     title: 'Análisis jurídico',
-    eyebrow: 'LEXIA / Análisis',
+    eyebrow: 'Análisis',
     description:
       'Reune criterios, resúmenes y soporte analítico para revisar documentos, riesgos y estrategia legal.',
     highlights: [
@@ -88,113 +88,109 @@ export const featureModules: Record<FeatureModule['slug'], FeatureModule> = {
       },
     ],
     backend: {
-      status: 'connected',
-      endpoint: '/api/ia-juridica/analizar-documento',
-      method: 'POST',
-    },
-  },
-  documentos: {
-    slug: 'documentos',
-    title: 'Documentos legales',
-    eyebrow: 'LEXIA / Documentos',
-    description:
-      'Gestiona documentos asociados a clientes y expedientes, con generación rápida en formato Word y PDF.',
-    highlights: [
-      {
-        title: 'CRUD completo',
-        description: 'Crea, edita, lista y elimina documentos persistidos en la API.',
-      },
-      {
-        title: 'Generación DOCX/PDF',
-        description: 'Emite documentos desde plantilla y variables con endpoints dedicados.',
-      },
-      {
-        title: 'Vinculación legal',
-        description: 'Asocia cada documento a cliente y expediente para trazabilidad del caso.',
-      },
-    ],
-    backend: {
-      status: 'connected',
-      endpoint: '/api/documentos',
-      method: 'GET',
-    },
-  },
-  'ia-juridica': {
-    slug: 'ia-juridica',
-    title: 'IA jurídica',
-    eyebrow: 'LEXIA / IA',
-    description:
-      'Ejecuta análisis documental, generación de borradores y resúmenes de expediente sobre endpoints de IA jurídica.',
-    highlights: [
-      {
-        title: 'Analizar documento',
-        description: 'Evalúa riesgos y recomendaciones desde texto libre o documento almacenado.',
-      },
-      {
-        title: 'Generar borrador',
-        description: 'Construye borradores legales con hechos y objetivo jurídico definidos.',
-      },
-      {
-        title: 'Resumir expediente',
-        description: 'Produce síntesis accionable del estado y siguientes pasos del expediente.',
-      },
-    ],
-    backend: {
-      status: 'connected',
-      endpoint: '/api/ia-juridica/analizar-documento',
+      status: 'planned',
+      endpoint: '/analysis/summary',
       method: 'POST',
     },
   },
   clientes: {
     slug: 'clientes',
-    title: 'Gestión de clientes',
-    eyebrow: 'LEXIA / Clientes',
-    description:
-      'Administra el padrón de clientes con datos de contacto, estado y trazabilidad para cada relación legal.',
+    title: 'CRM jurídico',
+    eyebrow: 'Clientes',
+    description: 'Gestiona fichas de clientes, estado de atención y datos de contacto con una vista comercial unificada.',
     highlights: [
       {
-        title: 'Registro',
-        description: 'Alta y edición de clientes con validación de datos obligatorios.',
+        title: 'Fichas unificadas',
+        description: 'Consolida identidad, contacto y estado de servicio en un solo flujo operativo.',
       },
       {
-        title: 'Seguimiento',
-        description: 'Actualiza estado activo/inactivo y concentra datos de contacto operativos.',
+        title: 'Historial visual',
+        description: 'Mantén visibilidad continua de cambios y seguimiento en cada cuenta.',
       },
       {
-        title: 'Base unificada',
-        description: 'Conecta clientes con los expedientes creados en la plataforma.',
+        title: 'Métricas rápidas',
+        description: 'Identifica cartera activa e inactiva para priorizar acciones comerciales.',
       },
     ],
     backend: {
-      status: 'connected',
+      status: 'planned',
       endpoint: '/api/clientes',
       method: 'GET',
     },
   },
   expedientes: {
     slug: 'expedientes',
-    title: 'Gestión de expedientes',
-    eyebrow: 'LEXIA / Expedientes',
-    description:
-      'Crea y administra expedientes con estado procesal, tipo y vinculación directa al cliente responsable.',
+    title: 'Expedientes',
+    eyebrow: 'Operación',
+    description: 'Controla el ciclo completo de expedientes con contexto de cliente, estado procesal y hitos clave.',
     highlights: [
       {
-        title: 'CRUD completo',
-        description: 'Alta, consulta, edición y baja de expedientes jurídicos en la API.',
+        title: 'Timeline visual',
+        description: 'Sigue evolución del caso con estados y fechas relevantes en una sola lectura.',
       },
       {
-        title: 'Vinculación',
-        description: 'Asocia cada expediente a un cliente existente para mantener consistencia.',
+        title: 'Estados claros',
+        description: 'Diferencia casos abiertos, en proceso o cerrados con indicadores directos.',
       },
       {
-        title: 'Estado procesal',
-        description: 'Clasifica por abierto, en proceso o cerrado para control operativo.',
+        title: 'Contexto ligado',
+        description: 'Vincula expediente con cliente y agenda para evitar información dispersa.',
       },
     ],
     backend: {
-      status: 'connected',
+      status: 'planned',
       endpoint: '/api/expedientes',
       method: 'GET',
+    },
+  },
+  documentos: {
+    slug: 'documentos',
+    title: 'Documentos',
+    eyebrow: 'Automatización',
+    description: 'Administra documentos legales y generación Word/PDF con trazabilidad por cliente y expediente.',
+    highlights: [
+      {
+        title: 'Plantillas dinámicas',
+        description: 'Parametriza variables para acelerar redacción y mantener consistencia documental.',
+      },
+      {
+        title: 'Formatos listos',
+        description: 'Genera salidas en Word y PDF según requerimiento del despacho.',
+      },
+      {
+        title: 'Control documental',
+        description: 'Consulta histórico y estado de cada documento desde una vista central.',
+      },
+    ],
+    backend: {
+      status: 'planned',
+      endpoint: '/api/documentos',
+      method: 'GET',
+    },
+  },
+  'ia-juridica': {
+    slug: 'ia-juridica',
+    title: 'IA Jurídica',
+    eyebrow: 'Asistente legal',
+    description: 'Analiza documentos, genera borradores y resume expedientes con una experiencia de conversación profesional.',
+    highlights: [
+      {
+        title: 'Análisis contextual',
+        description: 'Obtén riesgos y recomendaciones con enfoque práctico para decisiones legales.',
+      },
+      {
+        title: 'Borradores asistidos',
+        description: 'Acelera la primera versión de piezas jurídicas sin perder estructura técnica.',
+      },
+      {
+        title: 'Resúmenes ejecutivos',
+        description: 'Convierte expedientes extensos en puntos clave accionables para el equipo.',
+      },
+    ],
+    backend: {
+      status: 'planned',
+      endpoint: '/api/ia-juridica/analizar-documento',
+      method: 'POST',
     },
   },
 };

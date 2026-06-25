@@ -12,30 +12,17 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { getTypeOrmConfig } from './database/typeorm.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
-    TypeOrmModule.forRoot({
-      type: process.env.DB_TYPE === 'postgres' ? 'postgres' : 'sqlite',
-      database: process.env.DB_TYPE === 'postgres' ? process.env.DB_NAME || 'itzalan' : process.env.DB_NAME || 'database.sqlite',
-      ...(process.env.DB_TYPE === 'postgres'
-        ? {
-            host: process.env.DB_HOST || 'localhost',
-            port: Number(process.env.DB_PORT || 5432),
-            username: process.env.DB_USER || 'itzalan',
-            password: process.env.DB_PASSWORD || 'changeme',
-          }
-        : {}),
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
-      autoLoadEntities: true,
-    }),
+    TypeOrmModule.forRoot(getTypeOrmConfig()),
     AuthModule,
-    ContractsModule,
     ClientsModule,
     ExpedientesModule,
     AgendaModule,
+    ContractsModule,
     DocumentosModule,
     IaJuridicaModule,
     SubscriptionsModule,

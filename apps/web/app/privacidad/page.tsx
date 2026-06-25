@@ -1,24 +1,25 @@
 import Link from 'next/link';
+import { LegalDocumentPage } from '../../components/ui';
 
 export default function PrivacidadPage() {
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <article className="mx-auto max-w-4xl space-y-8 rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-slate-200 lg:p-10">
-        <header className="space-y-3 border-b border-slate-200 pb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Legal</p>
-          <h1 className="text-3xl font-bold">Politica de Privacidad</h1>
-          <p className="text-sm text-slate-600">Plataforma LEXIA / JURINEX IA</p>
-          <div className="text-sm text-slate-600">
-            <p>Fecha de vigencia: [●]</p>
-            <p>Version: 1.0</p>
-            <p>
-              Sitio web:{' '}
-              <Link href="https://app.lexialegal.com" className="font-semibold text-slate-900 underline">
-                https://app.lexialegal.com
-              </Link>
-            </p>
-          </div>
-        </header>
+    <LegalDocumentPage
+      eyebrow="Legal"
+      title="Politica de Privacidad"
+      subtitle="Plataforma ITZALAN TECH"
+      meta={
+        <>
+          <p>Fecha de vigencia: [●]</p>
+          <p>Version: 1.0</p>
+          <p>
+            Sitio web:{' '}
+            <Link href="/" className="font-semibold text-slate-100 underline">
+              Inicio de la plataforma
+            </Link>
+          </p>
+        </>
+      }
+    >
 
         <section className="space-y-3">
           <h2 className="text-xl font-semibold">1. Responsable del tratamiento</h2>
@@ -30,7 +31,7 @@ export default function PrivacidadPage() {
           <p className="text-sm leading-6 text-slate-700">Direccion: [●]</p>
           <p className="text-sm leading-6 text-slate-700">
             Esta Politica de Privacidad explica como se recopilan, utilizan, almacenan, protegen y comparten los datos
-            personales tratados mediante la plataforma LEXIA / JURINEX IA.
+            personales tratados mediante la plataforma ITZALAN TECH.
           </p>
         </section>
 
@@ -209,13 +210,12 @@ export default function PrivacidadPage() {
           </p>
         </section>
 
-        <section className="space-y-3 border-t border-slate-200 pt-6">
+        <section className="space-y-3 border-t border-slate-700 pt-6">
           <h2 className="text-xl font-semibold">13. Contacto</h2>
           <p className="text-sm leading-6 text-slate-700">Correo: [●]</p>
           <p className="text-sm leading-6 text-slate-700">Telefono: [●]</p>
           <p className="text-sm leading-6 text-slate-700">Direccion: [●]</p>
         </section>
-      </article>
-    </main>
+    </LegalDocumentPage>
   );
 }

@@ -1,30 +1,31 @@
 import Link from 'next/link';
+import { LegalDocumentPage } from '../../components/ui';
 
 export default function TerminosPage() {
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <article className="mx-auto max-w-4xl space-y-8 rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-slate-200 lg:p-10">
-        <header className="space-y-3 border-b border-slate-200 pb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Legal</p>
-          <h1 className="text-3xl font-bold">Terminos y Condiciones de Uso</h1>
-          <p className="text-sm text-slate-600">Plataforma LEXIA / JURINEX IA</p>
-          <div className="text-sm text-slate-600">
-            <p>Fecha de vigencia: [●]</p>
-            <p>Version: 1.0</p>
-            <p>Titular de la plataforma: [Nombre legal de la empresa o titular]</p>
-            <p>
-              Sitio web:{' '}
-              <Link href="https://app.lexialegal.com" className="font-semibold text-slate-900 underline">
-                https://app.lexialegal.com
-              </Link>
-            </p>
-          </div>
-        </header>
+    <LegalDocumentPage
+      eyebrow="Legal"
+      title="Terminos y Condiciones de Uso"
+      subtitle="Plataforma ITZALAN TECH"
+      meta={
+        <>
+          <p>Fecha de vigencia: [●]</p>
+          <p>Version: 1.0</p>
+          <p>Titular de la plataforma: [Nombre legal de la empresa o titular]</p>
+          <p>
+            Sitio web:{' '}
+            <Link href="/" className="font-semibold text-slate-100 underline">
+              Inicio de la plataforma
+            </Link>
+          </p>
+        </>
+      }
+    >
 
         <section className="space-y-3">
           <h2 className="text-xl font-semibold">1. Aceptacion de los terminos</h2>
           <p className="text-sm leading-6 text-slate-700">
-            Al registrarse, acceder o utilizar la plataforma LEXIA / JURINEX IA, el usuario acepta estos Terminos y
+            Al registrarse, acceder o utilizar la plataforma ITZALAN TECH, el usuario acepta estos Terminos y
             Condiciones de Uso. Si el usuario no esta de acuerdo, debera abstenerse de utilizar la plataforma.
           </p>
         </section>
@@ -32,7 +33,7 @@ export default function TerminosPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold">2. Naturaleza del servicio</h2>
           <p className="text-sm leading-6 text-slate-700">
-            LEXIA / JURINEX IA es una plataforma tecnologica orientada a apoyar a profesionales del derecho en la
+            ITZALAN TECH es una plataforma tecnologica orientada a apoyar a profesionales del derecho en la
             gestion de clientes, expedientes, documentos, agenda, analisis juridico asistido por inteligencia
             artificial y funcionalidades relacionadas.
           </p>
@@ -183,13 +184,12 @@ export default function TerminosPage() {
           </p>
         </section>
 
-        <section className="space-y-3 border-t border-slate-200 pt-6">
+        <section className="space-y-3 border-t border-slate-700 pt-6">
           <h2 className="text-xl font-semibold">15. Contacto</h2>
           <p className="text-sm leading-6 text-slate-700">Correo: [●]</p>
           <p className="text-sm leading-6 text-slate-700">Telefono: [●]</p>
           <p className="text-sm leading-6 text-slate-700">Direccion: [●]</p>
         </section>
-      </article>
-    </main>
+    </LegalDocumentPage>
   );
 }

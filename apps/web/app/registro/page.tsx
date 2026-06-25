@@ -1,147 +1,71 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { apiFetch } from '../lib/api';
-import { validateRegisterForm } from '../lib/auth-validation';
+import { useState } from 'react';
+import { Card, HeroPanel, PageShell } from '../../components/ui';
 
 export default function RegistroPage() {
-	const router = useRouter();
-	const [name, setName] = useState('');
-	const [email, setEmail] = useState('');
-	const [password, setPassword] = useState('');
-	const [role, setRole] = useState('cliente');
-	const [error, setError] = useState('');
-	const [success, setSuccess] = useState('');
-	const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
 
-	async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-		setError('');
-		setSuccess('');
+  return (
+    <PageShell>
+      <HeroPanel
+        eyebrow="Onboarding"
+        title="Registro de cuenta"
+        description={<p>Crea tu cuenta para habilitar tu workspace jurídico y comenzar una operación legal centralizada.</p>}
+      />
 
-		const validationError = validateRegisterForm({ name, email, password, role });
-		if (validationError) {
-			setError(validationError);
-			return;
-		}
+      <Card className="mx-auto w-full max-w-xl" title="Crear cuenta" subtitle="Configuración inicial para despachos y equipos legales.">
+        <form
+          className="mt-2 space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setDone(true);
+          }}
+        >
+          <label className="lex-label">
+            Nombre
+            <input className="lex-input" required />
+          </label>
 
-		setLoading(true);
+          <label className="lex-label">
+            Correo
+            <input type="email" className="lex-input" required />
+          </label>
 
-		try {
-			const response = await apiFetch('/auth/register', {
-				method: 'POST',
-				body: JSON.stringify({ name: name.trim(), email: email.trim(), password, role }),
-			});
+          <label className="lex-label">
+            Teléfono
+            <input className="lex-input" required />
+          </label>
 
-			if (!response.ok) {
-				const data = await response.json();
-				setError(Array.isArray(data.message) ? data.message[0] : data.message || 'Error al registrar usuario');
-				return;
-			}
+          <label className="lex-label">
+            Contraseña
+            <input type="password" className="lex-input" required />
+          </label>
 
-			const data = await response.json();
-			localStorage.setItem('itzalanAccessToken', data.accessToken);
-			localStorage.setItem('itzalanRefreshToken', data.refreshToken);
-			window.dispatchEvent(new Event('authChange'));
-			setSuccess('Registro exitoso. Redirigiendo al dashboard...');
-			router.push('/dashboard');
-		} catch {
-			setError('No se pudo conectar con la API');
-		} finally {
-			setLoading(false);
-		}
-	}
+          <label className="lex-label">
+            Tipo de usuario
+            <select className="lex-input" required>
+              <option value="abogado">Abogado</option>
+              <option value="asistente">Asistente</option>
+              <option value="administrador">Administrador</option>
+            </select>
+          </label>
 
-	return (
-		<main className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-			<section className="w-full max-w-md rounded-3xl bg-white p-8 shadow-lg">
-				<h1 className="text-3xl font-bold text-slate-900">Crear cuenta</h1>
-				<p className="mt-2 text-slate-600">Regístrate y accede al panel LegalTech.</p>
+          <button type="submit" className="lex-button-primary w-full">
+            Crear cuenta
+          </button>
 
-				<form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-					<div>
-						<label htmlFor="name" className="block text-sm font-medium text-slate-700">
-							Nombre
-						</label>
-						<input
-							id="name"
-							value={name}
-							onChange={(event) => setName(event.target.value)}
-							required
-							className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 focus:border-slate-900 focus:outline-none"
-						/>
-					</div>
-					<div>
-						<label htmlFor="email" className="block text-sm font-medium text-slate-700">
-							Correo electrónico
-						</label>
-						<input
-							id="email"
-							type="email"
-							value={email}
-							onChange={(event) => setEmail(event.target.value)}
-							required
-							className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 focus:border-slate-900 focus:outline-none"
-						/>
-					</div>
-					<div>
-						<label htmlFor="password" className="block text-sm font-medium text-slate-700">
-							Contraseña
-						</label>
-						<input
-							id="password"
-							type="password"
-							value={password}
-							onChange={(event) => setPassword(event.target.value)}
-							required
-							className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 focus:border-slate-900 focus:outline-none"
-						/>
-					</div>
-					<div>
-						<label htmlFor="role" className="block text-sm font-medium text-slate-700">
-							Rol
-						</label>
-						<select
-							id="role"
-							value={role}
-							onChange={(event) => setRole(event.target.value)}
-							className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 focus:border-slate-900 focus:outline-none"
-						>
-							<option value="cliente">cliente</option>
-							<option value="abogado">abogado</option>
-							<option value="asistente">asistente</option>
-						</select>
-					</div>
-					{error && <p className="text-sm text-red-600">{error}</p>}
-					{success && <p className="text-sm text-green-600">{success}</p>}
-					<button
-						type="submit"
-						disabled={loading}
-						className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
-					>
-						{loading ? 'Registrando...' : 'Registrarme'}
-					</button>
-				</form>
+          {done ? <p className="lex-notice-success">Registro demo completado.</p> : null}
+        </form>
 
-				<div className="mt-6 text-center text-sm text-slate-600">
-					<p>
-						¿Ya tienes cuenta? <Link href="/login" className="text-slate-900 font-semibold">Inicia sesión</Link>
-					</p>
-					<p className="mt-3 text-xs leading-5 text-slate-500">
-						Al crear una cuenta aceptas nuestros{' '}
-						<Link href="/terminos" className="font-semibold text-slate-700 underline underline-offset-2">
-							Términos
-						</Link>{' '}
-						y la{' '}
-						<Link href="/privacidad" className="font-semibold text-slate-700 underline underline-offset-2">
-							Política de privacidad
-						</Link>
-						.
-					</p>
-				</div>
-			</section>
-		</main>
-	);
+        <p className="mt-5 text-sm text-slate-300">
+          ¿Ya tienes cuenta?{' '}
+          <Link href="/login" className="font-semibold text-amber-300">
+            Inicia sesión
+          </Link>
+        </p>
+      </Card>
+    </PageShell>
+  );
 }

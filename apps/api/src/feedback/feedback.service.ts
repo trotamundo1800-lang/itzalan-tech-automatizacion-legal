@@ -62,4 +62,12 @@ export class FeedbackService {
 
     return { message: 'Retroalimentación recibida correctamente.' };
   }
+
+  async findRecent(limit = 20): Promise<FeedbackEntity[]> {
+    const normalizedLimit = Math.min(Math.max(limit, 1), 100);
+    return this.feedbackRepo.find({
+      order: { createdAt: 'DESC' },
+      take: normalizedLimit,
+    });
+  }
 }

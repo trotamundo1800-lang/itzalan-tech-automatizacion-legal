@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { featureModules } from '../../feature-data';
 import { FeatureShell } from '../../feature-shell';
@@ -36,7 +36,6 @@ function getErrorMessage(data: unknown, fallback: string) {
 }
 
 export default function ContractDraftDetailPage() {
-  const router = useRouter();
   const params = useParams<{ id: string }>();
   const draftId = useMemo(() => {
     const rawId = params?.id;
@@ -55,20 +54,6 @@ export default function ContractDraftDetailPage() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [regenerateLoading, setRegenerateLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-
-  function getAuthHeaders() {
-    const accessToken =
-      typeof window !== 'undefined' ? localStorage.getItem('itzalanAccessToken') : null;
-
-    if (!accessToken) {
-      router.push('/login');
-      throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
-    }
-
-    return {
-      Authorization: `Bearer ${accessToken}`,
-    };
-  }
 
   function syncFormState(nextDraft: ContractDraft) {
     setDraft(nextDraft);
@@ -92,14 +77,9 @@ export default function ContractDraftDetailPage() {
       setError('');
 
       try {
-        const response = await apiFetch(`/api/contracts/drafts/${draftId}`, {
-          headers: getAuthHeaders(),
-        });
+        const response = await apiFetch(`/api/contracts/drafts/${draftId}`);
 
         if (!response.ok) {
-          if (response.status === 401 || response.status === 403) {
-            throw new Error('Tu sesión no es válida para ver este borrador.');
-          }
           const data = await response.json().catch(() => null);
           throw new Error(getErrorMessage(data, 'No se pudo cargar el borrador solicitado.'));
         }
@@ -131,7 +111,6 @@ export default function ContractDraftDetailPage() {
     try {
       const response = await apiFetch(`/api/contracts/drafts/${draftId}`, {
         method: 'PATCH',
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           tipoContrato: tipoContrato.trim(),
           nombreCliente: nombreCliente.trim(),
@@ -146,9 +125,6 @@ export default function ContractDraftDetailPage() {
       });
 
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('Tu sesión no es válida para editar este borrador.');
-        }
         const data = await response.json().catch(() => null);
         throw new Error(getErrorMessage(data, 'No se pudo guardar el borrador.'));
       }
@@ -176,13 +152,9 @@ export default function ContractDraftDetailPage() {
     try {
       const response = await apiFetch(`/api/contracts/drafts/${draftId}/regenerate`, {
         method: 'POST',
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('Tu sesión no es válida para regenerar este borrador.');
-        }
         const data = await response.json().catch(() => null);
         throw new Error(getErrorMessage(data, 'No se pudo regenerar el borrador.'));
       }
@@ -202,19 +174,19 @@ export default function ContractDraftDetailPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Detalle del borrador</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">Editar contrato generado</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Detalle del borrador</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-50">Editar contrato generado</h2>
           </div>
           <Link
             href="/contratos"
-            className="inline-flex rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+            className="lex-button-secondary"
           >
             Volver a contratos
           </Link>
         </div>
 
         {loading ? (
-          <div className="rounded-3xl bg-slate-50 p-6 text-sm text-slate-600 ring-1 ring-slate-200">
+          <div className="rounded-[1rem] border border-slate-700 bg-slate-900/60 p-6 text-sm text-slate-300">
             Cargando borrador seleccionado...
           </div>
         ) : null}
@@ -225,17 +197,17 @@ export default function ContractDraftDetailPage() {
 
         {!loading && !error && draft ? (
           <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-            <section className="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+            <section className="rounded-[1rem] border border-slate-700 bg-[#111827] p-6">
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-slate-900">Campos editables</h3>
-                <p className="text-sm leading-6 text-slate-600">
+                <h3 className="text-xl font-semibold text-slate-50">Campos editables</h3>
+                <p className="text-sm leading-6 text-slate-300">
                   Ajusta el contenido del borrador y guarda los cambios o solicita una nueva regeneración simulada.
                 </p>
               </div>
 
               <form className="mt-6 space-y-5" onSubmit={handleSave}>
                 <div>
-                  <label htmlFor="tipoContrato" className="block text-sm font-medium text-slate-700">
+                  <label htmlFor="tipoContrato" className="lex-label">
                     Tipo de contrato
                   </label>
                   <input
@@ -243,12 +215,12 @@ export default function ContractDraftDetailPage() {
                     value={tipoContrato}
                     onChange={(event) => setTipoContrato(event.target.value)}
                     required
-                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                    className="lex-input"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="nombreCliente" className="block text-sm font-medium text-slate-700">
+                  <label htmlFor="nombreCliente" className="lex-label">
                     Nombre del cliente
                   </label>
                   <input
@@ -256,12 +228,12 @@ export default function ContractDraftDetailPage() {
                     value={nombreCliente}
                     onChange={(event) => setNombreCliente(event.target.value)}
                     required
-                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                    className="lex-input"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="descripcionCaso" className="block text-sm font-medium text-slate-700">
+                  <label htmlFor="descripcionCaso" className="lex-label">
                     Descripción del caso
                   </label>
                   <textarea
@@ -271,12 +243,12 @@ export default function ContractDraftDetailPage() {
                     required
                     minLength={10}
                     rows={5}
-                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                    className="lex-input"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="titulo" className="block text-sm font-medium text-slate-700">
+                  <label htmlFor="titulo" className="lex-label">
                     Título
                   </label>
                   <input
@@ -284,12 +256,12 @@ export default function ContractDraftDetailPage() {
                     value={titulo}
                     onChange={(event) => setTitulo(event.target.value)}
                     required
-                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                    className="lex-input"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="resumen" className="block text-sm font-medium text-slate-700">
+                  <label htmlFor="resumen" className="lex-label">
                     Resumen
                   </label>
                   <textarea
@@ -298,12 +270,12 @@ export default function ContractDraftDetailPage() {
                     onChange={(event) => setResumen(event.target.value)}
                     required
                     rows={6}
-                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                    className="lex-input"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="clausulasSugeridas" className="block text-sm font-medium text-slate-700">
+                  <label htmlFor="clausulasSugeridas" className="lex-label">
                     Cláusulas sugeridas
                   </label>
                   <textarea
@@ -312,18 +284,18 @@ export default function ContractDraftDetailPage() {
                     onChange={(event) => setClausulasTexto(event.target.value)}
                     required
                     rows={8}
-                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-slate-900 focus:outline-none"
+                    className="lex-input"
                   />
-                  <p className="mt-2 text-xs text-slate-500">Escribe una cláusula por línea para mantener el formato de lista.</p>
+                  <p className="mt-2 text-xs text-slate-400">Escribe una cláusula por línea para mantener el formato de lista.</p>
                 </div>
 
-                {successMessage ? <p className="text-sm font-medium text-green-700">{successMessage}</p> : null}
+                {successMessage ? <p className="lex-notice-success">{successMessage}</p> : null}
 
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="submit"
                     disabled={saveLoading || regenerateLoading}
-                    className="inline-flex rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    className="lex-button-primary"
                   >
                     {saveLoading ? 'Guardando cambios...' : 'Guardar cambios'}
                   </button>
@@ -331,7 +303,7 @@ export default function ContractDraftDetailPage() {
                     type="button"
                     onClick={handleRegenerate}
                     disabled={saveLoading || regenerateLoading}
-                    className="inline-flex rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                    className="lex-button-secondary"
                   >
                     {regenerateLoading ? 'Regenerando...' : 'Regenerar borrador'}
                   </button>

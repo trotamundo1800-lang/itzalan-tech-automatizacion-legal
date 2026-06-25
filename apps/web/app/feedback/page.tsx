@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckCircle2, Gauge, MessageSquareQuote, ShieldCheck } from 'lucide-react';
 import { API_BASE_URL } from '../lib/api';
+import { HeroPanel, InfoBand, PageShell, SectionHeader, SurfaceCard, StatusBanner } from '../../components/ui';
 
 type FormData = {
   nombre: string;
@@ -43,14 +45,14 @@ function Radio({ name, value, current, onChange, label }: {
   onChange: (v: string) => void; label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+    <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
       <input
         type="radio"
         name={name}
         value={value}
         checked={current === value}
         onChange={() => onChange(value)}
-        className="accent-slate-900"
+        className="accent-blue-700"
       />
       {label}
     </label>
@@ -60,13 +62,13 @@ function Radio({ name, value, current, onChange, label }: {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-slate-800">{label}</p>
+      <p className="text-sm font-medium text-slate-200">{label}</p>
       {children}
     </div>
   );
 }
 
-const inputCls = 'mt-1 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm focus:border-slate-900 focus:outline-none';
+const inputCls = 'lex-input mt-1';
 const textareaCls = `${inputCls} resize-none`;
 
 export default function FeedbackPage() {
@@ -131,33 +133,59 @@ export default function FeedbackPage() {
 
   if (submitted) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
-        <section className="mx-auto max-w-2xl rounded-[2rem] bg-white p-10 text-center shadow-sm ring-1 ring-slate-200">
-          <p className="text-4xl">✅</p>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">Gracias por su retroalimentación</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Sus respuestas han sido registradas. Su opinión es clave para mejorar LEXIA / JURINEX IA
-            antes del lanzamiento comercial.
-          </p>
-        </section>
-      </main>
+      <PageShell>
+        <div className="mx-auto max-w-2xl space-y-5 text-center">
+          <InfoBand
+            items={[
+              { label: 'Estado', value: 'Registrado', hint: 'Feedback recibido', icon: <CheckCircle2 className="h-4 w-4" /> },
+              { label: 'Enfoque', value: 'Producto', hint: 'Mejora continua', icon: <Gauge className="h-4 w-4" /> },
+              { label: 'Uso', value: 'Piloto', hint: 'Validación comercial', icon: <ShieldCheck className="h-4 w-4" /> },
+              { label: 'Entrada', value: 'Activa', hint: 'Opinión del abogado', icon: <MessageSquareQuote className="h-4 w-4" /> },
+            ]}
+          />
+          <SurfaceCard className="text-center">
+            <p className="text-4xl">✅</p>
+            <h1 className="mt-4 text-2xl font-bold text-slate-50">Gracias por su retroalimentación</h1>
+            <p className="mt-3 text-sm leading-7 text-slate-300">
+              Sus respuestas han sido registradas. Su opinión es clave para mejorar la plataforma antes del lanzamiento comercial.
+            </p>
+          </SurfaceCard>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-8">
+    <PageShell>
+      <form onSubmit={handleSubmit} className="mx-auto max-w-5xl space-y-8">
+        <HeroPanel
+          eyebrow="Piloto / Producto"
+          title="Retroalimentación estructurada para afinar la experiencia legal antes del lanzamiento."
+          description={
+            <>
+              <p>Este formulario recoge señales de uso, claridad funcional y percepción comercial sobre la plataforma.</p>
+              <p>El objetivo es mejorar la propuesta para abogados con base en observaciones reales y accionables.</p>
+            </>
+          }
+          aside={
+            <div className="space-y-3 text-sm text-slate-200">
+              <p className="font-semibold text-white">Qué evaluamos</p>
+              <p className="text-slate-300">Usabilidad, valor de IA jurídica, interés comercial, pricing y mejoras previas al lanzamiento.</p>
+            </div>
+          }
+        />
 
-        {/* Header */}
-        <header className="rounded-[2rem] bg-slate-950 px-8 py-8 text-white">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Piloto</p>
-          <h1 className="mt-3 text-3xl font-bold">Formulario breve de retroalimentación</h1>
-          <p className="mt-1 text-sm text-slate-400">LEXIA / JURINEX IA</p>
-        </header>
+        <InfoBand
+          items={[
+            { label: 'Usabilidad', value: 'Claridad', hint: 'Experiencia real del usuario', icon: <Gauge className="h-4 w-4" /> },
+            { label: 'Valor IA', value: 'Precisión', hint: 'Análisis y borradores', icon: <ShieldCheck className="h-4 w-4" /> },
+            { label: 'Comercial', value: 'Pricing', hint: 'Interés por plan', icon: <CheckCircle2 className="h-4 w-4" /> },
+            { label: 'Señales', value: 'Accionables', hint: 'Mejoras antes del lanzamiento', icon: <MessageSquareQuote className="h-4 w-4" /> },
+          ]}
+        />
 
-        {/* Datos generales */}
-        <section className="space-y-4 rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-slate-200">
-          <h2 className="font-semibold text-slate-900">Datos generales</h2>
+        <SurfaceCard className="space-y-4">
+          <SectionHeader eyebrow="Perfil" title="Datos generales" subtitle="Identificación y contexto de la evaluación." />
           {(
             [
               ['nombre', 'Nombre'],
@@ -173,11 +201,10 @@ export default function FeedbackPage() {
           <Field label="Fecha">
             <input type="date" value={form.fecha} onChange={(e) => set('fecha', e.target.value)} className={inputCls} />
           </Field>
-        </section>
+        </SurfaceCard>
 
-        {/* S1 Experiencia general */}
-        <section className="space-y-5 rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-slate-200">
-          <h2 className="font-semibold text-slate-900">1. Experiencia general</h2>
+        <SurfaceCard className="space-y-5">
+          <SectionHeader eyebrow="Bloque 1" title="Experiencia general" subtitle="Flujo inicial, accesos y primera percepción del producto." />
 
           <Field label="¿La plataforma fue fácil de usar?">
             <div className="flex flex-wrap gap-4">
@@ -206,11 +233,10 @@ export default function FeedbackPage() {
           <Field label="Comentario:">
             <textarea rows={2} value={form.comentarioLogin} onChange={(e) => set('comentarioLogin', e.target.value)} className={textareaCls} />
           </Field>
-        </section>
+        </SurfaceCard>
 
-        {/* S2 Clientes, expedientes y documentos */}
-        <section className="space-y-5 rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-slate-200">
-          <h2 className="font-semibold text-slate-900">2. Clientes, expedientes y documentos</h2>
+        <SurfaceCard className="space-y-5">
+          <SectionHeader eyebrow="Bloque 2" title="Clientes, expedientes y documentos" subtitle="Valor operativo para la práctica diaria." />
 
           <Field label="¿La gestión de clientes y expedientes le parece útil?">
             <div className="flex flex-wrap gap-4">
@@ -227,11 +253,10 @@ export default function FeedbackPage() {
           <Field label="¿Qué formatos deberían agregarse primero?">
             <textarea rows={2} value={form.formatosPrimero} onChange={(e) => set('formatosPrimero', e.target.value)} className={textareaCls} />
           </Field>
-        </section>
+        </SurfaceCard>
 
-        {/* S3 IA jurídica */}
-        <section className="space-y-5 rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-slate-200">
-          <h2 className="font-semibold text-slate-900">3. IA jurídica</h2>
+        <SurfaceCard className="space-y-5">
+          <SectionHeader eyebrow="Bloque 3" title="IA jurídica" subtitle="Utilidad, claridad y tipo de consulta esperada." />
 
           <Field label="¿La IA jurídica le ayudó en alguna tarea?">
             <div className="flex flex-wrap gap-4">
@@ -252,11 +277,10 @@ export default function FeedbackPage() {
           <Field label="¿Qué tipo de consultas le gustaría realizar?">
             <textarea rows={2} value={form.iaConsultas} onChange={(e) => set('iaConsultas', e.target.value)} className={textareaCls} />
           </Field>
-        </section>
+        </SurfaceCard>
 
-        {/* S4 Suscripciones y precio */}
-        <section className="space-y-5 rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-slate-200">
-          <h2 className="font-semibold text-slate-900">4. Suscripciones y precio</h2>
+        <SurfaceCard className="space-y-5">
+          <SectionHeader eyebrow="Bloque 4" title="Suscripciones y precio" subtitle="Interés comercial y umbral de compra." />
 
           <Field label="¿Pagaría por esta plataforma?">
             <div className="flex flex-wrap gap-4">
@@ -281,13 +305,12 @@ export default function FeedbackPage() {
           <Field label="¿Qué función justificaría pagar una suscripción?">
             <textarea rows={2} value={form.funcionJustifica} onChange={(e) => set('funcionJustifica', e.target.value)} className={textareaCls} />
           </Field>
-        </section>
+        </SurfaceCard>
 
-        {/* S5 Recomendación final */}
-        <section className="space-y-5 rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-slate-200">
-          <h2 className="font-semibold text-slate-900">5. Recomendación final</h2>
+        <SurfaceCard className="space-y-5">
+          <SectionHeader eyebrow="Bloque 5" title="Recomendación final" subtitle="Señales de adopción, calificación y mejoras prioritarias." />
 
-          <Field label="¿Recomendaría LEXIA / JURINEX IA a otro abogado?">
+          <Field label="¿Recomendaría esta plataforma a otro abogado?">
             <div className="flex flex-wrap gap-4">
               {['Sí', 'Tal vez', 'No'].map((v) => (
                 <Radio key={v} name="recomendaria" value={v} current={form.recomendaria} onChange={(v) => set('recomendaria', v)} label={v} />
@@ -304,8 +327,8 @@ export default function FeedbackPage() {
                   onClick={() => set('calificacion', n)}
                   className={`h-10 w-10 rounded-full text-sm font-semibold transition ${
                     form.calificacion === n
-                      ? 'bg-slate-900 text-white'
-                      : 'border border-slate-300 text-slate-700 hover:border-slate-500'
+                      ? 'bg-blue-800 text-white'
+                      : 'border border-slate-600 text-slate-300 hover:border-slate-500'
                   }`}
                 >
                   {n}
@@ -321,20 +344,20 @@ export default function FeedbackPage() {
           <Field label="Comentarios adicionales:">
             <textarea rows={3} value={form.comentarios} onChange={(e) => set('comentarios', e.target.value)} className={textareaCls} />
           </Field>
-        </section>
+        </SurfaceCard>
 
         {submitError && (
-          <p className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{submitError}</p>
+          <StatusBanner tone="error">{submitError}</StatusBanner>
         )}
 
         <button
           type="submit"
           disabled={sending}
-          className="w-full rounded-full bg-slate-900 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="lex-button-primary w-full"
         >
           {sending ? 'Enviando...' : 'Enviar retroalimentación'}
         </button>
       </form>
-    </main>
+    </PageShell>
   );
 }

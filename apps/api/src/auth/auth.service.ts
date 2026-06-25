@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { User, UserRole } from './user.entity';
@@ -28,7 +28,17 @@ export class AuthService {
       password: hashedPassword,
       role: (registerDto.role || 'cliente') as UserRole,
     });
-    await this.userRepository.save(user);
+    try {
+      await this.userRepository.save(user);
+    } catch (err) {
+      if (
+        err instanceof QueryFailedError &&
+        (err as any).message?.toLowerCase().includes('unique')
+      ) {
+        throw new ConflictException('El correo ya está registrado');
+      }
+      throw err;
+    }
 
     return this.generateToken(user);
   }

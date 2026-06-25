@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { AiConversation } from '../ia-juridica/ai-conversation.entity';
 
 export type UserRole = 'admin' | 'abogado' | 'asistente' | 'cliente';
 
@@ -24,4 +25,7 @@ export class User {
 
   @Column({ type: 'varchar', length: 20, default: 'cliente' })
   role!: UserRole;
+
+  @OneToMany(() => AiConversation, (conversation) => conversation.user)
+  aiConversations!: AiConversation[];
 }

@@ -1,5 +1,8 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { User } from '../auth/user.entity';
 import { Client } from '../clients/client.entity';
+import { AiConversation } from '../ia-juridica/ai-conversation.entity';
+import { OneToMany } from 'typeorm';
 
 export type ExpedienteEstado = 'abierto' | 'en_proceso' | 'cerrado';
 
@@ -29,6 +32,16 @@ export class Expediente {
 
   @Column({ type: 'uuid' })
   clienteId!: string;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'createdByUserId' })
+  createdByUser?: User | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  createdByUserId!: string | null;
+
+  @OneToMany(() => AiConversation, (conversation) => conversation.expediente)
+  aiConversations!: AiConversation[];
 
   @CreateDateColumn()
   createdAt!: Date;

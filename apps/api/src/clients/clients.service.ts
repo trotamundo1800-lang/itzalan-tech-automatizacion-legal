@@ -4,15 +4,19 @@ import { Repository } from 'typeorm';
 import { Client } from './client.entity';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { SubscriptionQuotaService } from '../subscriptions/subscription-quota.service';
 
 @Injectable()
 export class ClientsService {
   constructor(
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
+    private readonly subscriptionQuotaService: SubscriptionQuotaService,
   ) {}
 
-  async create(payload: CreateClientDto) {
+  async create(payload: CreateClientDto, userId: string) {
+    await this.subscriptionQuotaService.assertClientLimit(userId);
+
     const existing = await this.clientRepository.findOne({ where: { email: payload.email } });
     if (existing) {
       throw new ConflictException('El cliente con ese correo ya existe');
@@ -21,6 +25,7 @@ export class ClientsService {
     const client = this.clientRepository.create({
       ...payload,
       estado: payload.estado ?? 'activo',
+      createdByUserId: userId,
     });
 
     return this.clientRepository.save(client);

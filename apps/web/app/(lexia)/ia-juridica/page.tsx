@@ -4,7 +4,7 @@ import { IaJuridicaPanel } from './ia-juridica-panel';
 
 export default function IaJuridicaPage() {
   return (
-    <FeatureShell module={featureModules.analisis}>
+    <FeatureShell module={featureModules['ia-juridica']}>
       <IaJuridicaPanel />
     </FeatureShell>
   );

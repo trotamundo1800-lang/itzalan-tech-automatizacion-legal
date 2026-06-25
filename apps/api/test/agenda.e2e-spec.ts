@@ -2,6 +2,7 @@ import { baseUrl, createApiClient, e2eTimeout } from './helpers/e2e-config';
 import { getAuthToken } from './helpers/auth';
 import { createClient } from './helpers/clients';
 import { createExpediente } from './helpers/expedientes';
+import { getPlans, subscribeWithStripe } from './helpers/subscriptions';
 
 const api = createApiClient(baseUrl);
 
@@ -12,6 +13,9 @@ describe('Agenda E2E', () => {
   beforeAll(async () => {
     const auth = await getAuthToken(baseUrl, { role: 'abogado' });
     accessToken = auth.accessToken;
+    const plans = await getPlans(accessToken, baseUrl);
+    const basic = plans.find((p) => p.code === 'basic')!;
+    await subscribeWithStripe(accessToken, basic.id, baseUrl);
   });
 
   it('should create, list, update and delete agenda events', async () => {

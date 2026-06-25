@@ -6,18 +6,24 @@ import PDFDocument from 'pdfkit';
 import { LegalDocument } from './legal-document.entity';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
+import { GenerateDocumentDto } from './dto/generate-document.dto';
+import { DocumentGeneration } from './document-generation.entity';
 import { Client } from '../clients/client.entity';
 import { Expediente } from '../expedientes/expediente.entity';
+import { SubscriptionQuotaService } from '../subscriptions/subscription-quota.service';
 
 @Injectable()
 export class DocumentosService {
   constructor(
     @InjectRepository(LegalDocument)
     private readonly legalDocumentRepository: Repository<LegalDocument>,
+    @InjectRepository(DocumentGeneration)
+    private readonly documentGenerationRepository: Repository<DocumentGeneration>,
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
     @InjectRepository(Expediente)
     private readonly expedienteRepository: Repository<Expediente>,
+    private readonly subscriptionQuotaService: SubscriptionQuotaService,
   ) {}
 
   private async ensureClientExists(clienteId: string) {
@@ -25,6 +31,29 @@ export class DocumentosService {
     if (!client) {
       throw new NotFoundException('Cliente no encontrado');
     }
+  }
+
+  private async generateDocxBuffer(text: string) {
+    return Buffer.from(await this.generateDocxBase64(text), 'base64');
+  }
+
+  private async generatePdfBuffer(text: string) {
+    return Buffer.from(await this.generatePdfBase64(text), 'base64');
+  }
+
+  private toSafeFileName(value: string) {
+    return value.replace(/[^a-zA-Z0-9-_]/g, '_');
+  }
+
+  private buildDefaultVariables(document: LegalDocument) {
+    const currentDate = new Date();
+    const fecha = currentDate.toISOString().slice(0, 10);
+    return {
+      cliente: document.cliente?.nombre ?? 'Cliente',
+      despacho: process.env.LEGAL_OFFICE_NAME ?? 'ITZALAN TECH',
+      fecha,
+      anio: String(currentDate.getFullYear()),
+    };
   }
 
   private applyTemplate(template: string, variables?: Record<string, string>) {
@@ -108,7 +137,8 @@ export class DocumentosService {
     return { contenidoTexto, contenidoBase64 };
   }
 
-  async create(payload: CreateDocumentDto) {
+  async create(payload: CreateDocumentDto, userId: string) {
+    await this.subscriptionQuotaService.assertDocumentLimit(userId);
     const relations = await this.resolveRelations(payload);
     const generated = await this.buildDocumentContent(payload);
 
@@ -123,30 +153,31 @@ export class DocumentosService {
       observaciones: payload.observaciones ?? null,
       clienteId: relations.clienteId,
       expedienteId: relations.expedienteId,
+      createdByUserId: userId,
     });
 
     return this.legalDocumentRepository.save(document);
   }
 
-  async generateWord(payload: Omit<CreateDocumentDto, 'formato'>) {
-    return this.create({ ...payload, formato: 'docx' });
+  async generateWord(payload: Omit<CreateDocumentDto, 'formato'>, userId: string) {
+    return this.create({ ...payload, formato: 'docx' }, userId);
   }
 
-  async generatePdf(payload: Omit<CreateDocumentDto, 'formato'>) {
-    return this.create({ ...payload, formato: 'pdf' });
+  async generatePdf(payload: Omit<CreateDocumentDto, 'formato'>, userId: string) {
+    return this.create({ ...payload, formato: 'pdf' }, userId);
   }
 
   findAll() {
     return this.legalDocumentRepository.find({
       order: { createdAt: 'DESC' },
-      relations: { cliente: true, expediente: true },
+      relations: { cliente: true, expediente: true, generations: true },
     });
   }
 
   async findOne(id: string) {
     const doc = await this.legalDocumentRepository.findOne({
       where: { id },
-      relations: { cliente: true, expediente: true },
+      relations: { cliente: true, expediente: true, generations: true },
     });
 
     if (!doc) {
@@ -206,5 +237,44 @@ export class DocumentosService {
     const doc = await this.findOne(id);
     await this.legalDocumentRepository.remove(doc);
     return { message: 'Documento eliminado' };
+  }
+
+  async generateFromSaved(id: string, payload: GenerateDocumentDto, userId: string) {
+    const document = await this.findOne(id);
+    await this.subscriptionQuotaService.assertDocumentLimit(userId);
+
+    const variablesAplicadas: Record<string, string> = {
+      ...this.buildDefaultVariables(document),
+      ...(document.variables ?? {}),
+      ...(payload.variables ?? {}),
+    };
+
+    const contenidoTexto = this.applyTemplate(document.plantilla, variablesAplicadas);
+    const buffer =
+      payload.formato === 'docx'
+        ? await this.generateDocxBuffer(contenidoTexto)
+        : await this.generatePdfBuffer(contenidoTexto);
+
+    const extension = payload.formato === 'docx' ? 'docx' : 'pdf';
+    const baseName = this.toSafeFileName(document.nombreArchivo || 'documento');
+    const fileName = `${baseName}.${extension}`;
+
+    const historyEntry = this.documentGenerationRepository.create({
+      documentId: document.id,
+      formato: payload.formato,
+      nombreArchivo: fileName,
+      variablesAplicadas,
+    });
+    const savedHistory = await this.documentGenerationRepository.save(historyEntry);
+
+    return {
+      fileName,
+      contentType:
+        payload.formato === 'docx'
+          ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          : 'application/pdf',
+      buffer,
+      historyId: savedHistory.id,
+    };
   }
 }

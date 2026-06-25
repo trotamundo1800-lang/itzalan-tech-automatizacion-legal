@@ -190,42 +190,42 @@ export default function AdminPlanesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
-      <section className="mx-auto max-w-6xl space-y-6 rounded-[2rem] bg-white p-8 shadow-lg ring-1 ring-slate-200 lg:p-10">
+    <main className="min-h-screen bg-transparent p-6 text-slate-100">
+      <section className="mx-auto max-w-6xl space-y-6 rounded-[1.2rem] border border-slate-700 bg-slate-900/80 p-8 shadow-[0_25px_60px_-45px_rgba(0,0,0,0.95)] lg:p-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Administración comercial</p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-900">Panel de planes</h1>
-            <p className="mt-2 text-slate-600">Gestión básica de planes y suscripciones activas de usuarios.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Administración comercial</p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-50">Panel de planes</h1>
+            <p className="mt-2 text-slate-300">Gestión básica de planes y suscripciones activas de usuarios.</p>
           </div>
           <Link
             href="/dashboard"
-            className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+            className="lex-button-secondary"
           >
             Volver al dashboard
           </Link>
         </div>
 
-        {loading ? <p className="text-sm text-slate-600">Cargando panel...</p> : null}
-        {error ? <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-        {success ? <p className="rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-700">{success}</p> : null}
+        {loading ? <p className="text-sm text-slate-300">Cargando panel...</p> : null}
+        {error ? <p className="lex-notice-error">{error}</p> : null}
+        {success ? <p className="lex-notice-success">{success}</p> : null}
 
         <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <form onSubmit={createPlan} className="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
-            <h2 className="text-xl font-semibold text-slate-900">Crear nuevo plan</h2>
+          <form onSubmit={createPlan} className="rounded-xl border border-slate-700 bg-[#111827] p-6">
+            <h2 className="text-xl font-semibold text-slate-50">Crear nuevo plan</h2>
             <div className="mt-4 space-y-3">
               <input
                 value={form.code}
                 onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))}
                 placeholder="Código (ej: startup)"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                className="lex-input mt-0"
                 required
               />
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                 placeholder="Nombre del plan"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                className="lex-input mt-0"
                 required
               />
               <textarea
@@ -233,7 +233,7 @@ export default function AdminPlanesPage() {
                 onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
                 placeholder="Descripción"
                 rows={3}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                className="lex-input mt-0"
                 required
               />
               <input
@@ -241,41 +241,41 @@ export default function AdminPlanesPage() {
                 onChange={(event) => setForm((current) => ({ ...current, monthlyPrice: Number(event.target.value) }))}
                 type="number"
                 min={0}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                className="lex-input mt-0"
                 required
               />
               <input
                 value={form.currency}
                 onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}
                 placeholder="Moneda"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                className="lex-input mt-0"
                 required
               />
             </div>
             <button
               type="submit"
               disabled={saving}
-              className="mt-4 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+              className="lex-button-primary mt-4"
             >
               {saving ? 'Guardando...' : 'Crear plan'}
             </button>
           </form>
 
-          <div className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
-            <h2 className="text-xl font-semibold text-slate-900">Planes existentes</h2>
+          <div className="rounded-xl border border-slate-700 bg-[#111827] p-6">
+            <h2 className="text-xl font-semibold text-slate-50">Planes existentes</h2>
             <div className="mt-4 space-y-3">
               {plans.map((plan) => (
-                <article key={plan.id} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                  <p className="font-semibold text-slate-900">{plan.name}</p>
-                  <p className="text-sm text-slate-600">Código: {plan.code}</p>
-                  <p className="text-sm text-slate-600">{plan.currency} {plan.monthlyPrice} / mes</p>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                <article key={plan.id} className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">
+                  <p className="font-semibold text-slate-50">{plan.name}</p>
+                  <p className="text-sm text-slate-300">Código: {plan.code}</p>
+                  <p className="text-sm text-slate-300">{plan.currency} {plan.monthlyPrice} / mes</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
                     {plan.isActive ? 'activo' : 'inactivo'}
                   </p>
                   <button
                     type="button"
                     onClick={() => togglePlan(plan)}
-                    className="mt-3 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+                    className="mt-3 rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200"
                   >
                     {plan.isActive ? 'Desactivar' : 'Activar'}
                   </button>
@@ -285,23 +285,23 @@ export default function AdminPlanesPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">Suscripciones de usuarios</h2>
+        <section className="rounded-xl border border-slate-700 bg-[#111827] p-6">
+          <h2 className="text-xl font-semibold text-slate-50">Suscripciones de usuarios</h2>
           <div className="mt-4 space-y-3">
             {subscriptions.map((item) => (
-              <article key={item.id} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                <p className="font-semibold text-slate-900">{item.user.name} ({item.user.email})</p>
-                <p className="text-sm text-slate-600">
+              <article key={item.id} className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">
+                <p className="font-semibold text-slate-50">{item.user.name} ({item.user.email})</p>
+                <p className="text-sm text-slate-300">
                   Plan: {item.plan?.name ?? 'Sin plan'} | Proveedor: {item.provider}
                 </p>
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Estado: {item.status}</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Estado: {item.status}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {(['active', 'past_due', 'cancelled', 'expired'] as const).map((status) => (
                     <button
                       key={status}
                       type="button"
                       onClick={() => updateSubscriptionStatus(item.id, status)}
-                      className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+                      className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200"
                     >
                       {status}
                     </button>
@@ -309,7 +309,7 @@ export default function AdminPlanesPage() {
                 </div>
               </article>
             ))}
-            {subscriptions.length === 0 ? <p className="text-sm text-slate-500">No hay suscripciones registradas aún.</p> : null}
+            {subscriptions.length === 0 ? <p className="text-sm text-slate-400">No hay suscripciones registradas aún.</p> : null}
           </div>
         </section>
       </section>

@@ -12,6 +12,8 @@
     "dev:api": "npm --workspace @itzalan/api run dev",
     "dev:mobile": "npm --workspace @itzalan/mobile run start",
     "build": "npm --workspace @itzalan/web run build && npm --workspace @itzalan/api run build && npm --workspace @itzalan/mobile run build",
+    "db:migrate": "npm --workspace @itzalan/api run db:migration:run",
+    "db:migrate:revert": "npm --workspace @itzalan/api run db:migration:revert",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "npm --workspace @itzalan/api run test:e2e",
     "lint": "npm run lint --workspaces"

@@ -1,72 +1,66 @@
-# ITZALAN TECH – AUTOMATIZACIÓN LEGAL
+# ITZALAN TECH - Automatizacion Legal
 
-Monorepo de ejemplo para una plataforma LegalTech con web, backend y aplicación móvil.
+![ITZALAN TECH](apps/web/public/brand/itzalan-logo.svg)
 
-## Directorio
+## Descripcion del proyecto
+ITZALAN TECH es una plataforma LegalTech SaaS (web + app movil) para abogados y despachos juridicos de Honduras y Centroamerica. Centraliza gestion de clientes, expedientes, documentos, agenda, suscripciones y capacidades de inteligencia artificial juridica.
 
-- `apps/web` - Frontend Next.js
-- `apps/api` - Backend NestJS
-- `apps/mobile` - App móvil Expo
-- `packages/ui` - Paquete compartido de UI
+## Tecnologias utilizadas
+- Frontend web: Next.js (App Router) + React + Tailwind CSS
+- Backend API: NestJS + TypeORM + JWT + Passport
+- App movil: Expo + React Native
+- Base de datos: PostgreSQL (principal) y SQLite (desarrollo)
+- Infraestructura local: Docker Compose
+- Monorepo: npm workspaces
 
-## Comandos
+## Instalacion
+1. Instalar dependencias del monorepo:
+   - npm install
+2. Configurar variables de entorno segun cada app (API, web y mobile).
 
-Desde la raíz:
+## Ejecucion local
+- Web:
+  - npm run dev
+- API:
+  - npm run dev:api
+- App movil:
+  - npm run dev:mobile
 
-```bash
-npm install
-npm run dev
-npm run dev:api
-npm run dev:mobile
-```
+Puertos comunes en desarrollo:
+- Web: http://localhost:3000
+- API: http://localhost:3001
 
-## Infraestructura
+## Estructura general
+- apps/web: Frontend web
+- apps/api: Backend API
+- apps/mobile: Aplicacion movil
+- packages/ui: Componentes compartidos
+- docs: Documentacion funcional y tecnica del proyecto
 
-- `docker-compose.yml`: PostgreSQL y Qdrant
+## Modulo de suscripciones
+- Ruta web: /suscripciones
+- Planes activos: Basico (USD 19), Profesional (USD 49), Empresarial (USD 99), Enterprise (desde USD 299)
+- Acciones disponibles: activar por Stripe/PayPal y cancelar suscripcion
+- Modo de pago actual: sandbox/demo (sin cobro real)
+- Webhooks base: /api/subscriptions/webhooks/stripe y /api/subscriptions/webhooks/paypal
 
-## API Backend
-
-- `apps/api` usa NestJS con JWT, Passport y TypeORM
-- `apps/api` está configurado para conectar a PostgreSQL usando:
-  - `DB_TYPE=postgres` (por defecto)
-  - `DB_HOST` (por defecto `localhost`)
-  - `DB_PORT` (por defecto `5432`)
-  - `DB_USER` (por defecto `itzalan`)
-  - `DB_PASSWORD` (por defecto `changeme`)
-  - `DB_NAME` (por defecto `itzalan`)
-- También puede usar SQLite para desarrollo local:
-  - `DB_TYPE=sqlite`
-  - `DB_NAME=database.sqlite`
-
-## Autenticación
-
-- Rutas disponibles:
-  - `POST /auth/register`
-  - `POST /auth/login`
-  - `GET /auth/profile` (requiere JWT)
-  - `POST /auth/refresh` (refresh token en body)
-  - `POST /auth/logout` (acepta `refreshToken` en el body y lo invalida)
-  - `GET /users` (requiere rol `admin`)
-
-- Los roles soportados son:
-  - `admin`
-  - `abogado`
-  - `asistente`
-  - `cliente`
-
-  Detalles de logout:
-  - `POST /auth/logout` debe recibir `{ "refreshToken": "..." }` en el cuerpo.
-  - El servidor valida el refresh token y borra el `refreshToken` almacenado para el usuario asociado, invalidando sesiones posteriores.
-
-  Endpoints y puertos por defecto (desarrollo):
-  - API: http://localhost:3001
-  - Web: http://localhost:3000
-
-- `apps/web` usa `NEXT_PUBLIC_API_URL` para configurar la URL de la API:
-  - `NEXT_PUBLIC_API_URL=http://localhost:3001`
-- `apps/mobile` usa `apps/mobile/app/lib/api.ts` para consumir la API en `http://localhost:3001`
-
-## Notas
-
-- Cambia `CHANGE_THIS_SECRET_TO_A_STRONG_VALUE` en `apps/api/src/auth/constants.ts` antes de producción.
-- `synchronize: true` es útil para desarrollo, pero en producción es mejor usar migraciones.
+## Enlaces a la documentacion
+- [Indice de documentacion](docs/README.md)
+- [Despliegue VPS](docs/vps-despliegue.md)
+- [Vision de producto](docs/vision-producto.md)
+- [Estructura maestra](docs/estructura-maestra.md)
+- [Arquitectura](docs/arquitectura.md)
+- [Base de datos](docs/base-datos.md)
+- [API](docs/api.md)
+- [Agentes IA](docs/agentes-ia.md)
+- [Automatizaciones n8n](docs/automatizaciones-n8n.md)
+- [Roadmap](docs/roadmap.md)
+- [Despliegue](docs/despliegue.md)
+- [Seguridad](docs/seguridad.md)
+- [Planes de suscripcion](docs/planes-suscripcion.md)
+- [App movil](docs/app-movil.md)
+- [Modulos juridicos](docs/modulos-juridicos.md)
+- [Modulos laborales](docs/modulos-laborales.md)
+- [Modulos inmobiliarios](docs/modulos-inmobiliarios.md)
+- [Marketing juridico](docs/marketing-juridico.md)
+- [Integraciones](docs/integraciones.md)

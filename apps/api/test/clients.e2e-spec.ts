@@ -1,5 +1,6 @@
 import { baseUrl, createApiClient, e2eTimeout } from './helpers/e2e-config';
 import { getAuthToken } from './helpers/auth';
+import { getPlans, subscribeWithStripe } from './helpers/subscriptions';
 
 const api = createApiClient(baseUrl);
 
@@ -10,6 +11,9 @@ describe('Clients E2E', () => {
   beforeAll(async () => {
     const auth = await getAuthToken(baseUrl, { role: 'abogado' });
     accessToken = auth.accessToken;
+    const plans = await getPlans(accessToken, baseUrl);
+    const basic = plans.find((p) => p.code === 'basic')!;
+    await subscribeWithStripe(accessToken, basic.id, baseUrl);
   });
 
   it('should create, list and delete a client', async () => {
