@@ -22,14 +22,19 @@ export class BibliotecaChunk {
   @Column('int')
   chunkIndex!: number;
 
-  @Column('jsonb', { nullable: true })
-  metadata?: Record<string, any>;
+  @Column('text', { nullable: true })
+  metadata?: string; // Stored as JSON string for SQLite compatibility
 
   @Column('text', { nullable: true })
   embedding?: string; // Stored as JSON string for SQLite compatibility
 
   @Column('varchar', { length: 100, nullable: true })
   embeddingModel?: string;
+
+  // PostgreSQL vector column (1536 dimensions for text-embedding-3-small)
+  // SQLite will ignore this column; only used on PostgreSQL with pgvector
+  @Column('simple-array', { nullable: true })
+  embeddingVector?: number[];
 
   @CreateDateColumn()
   createdAt!: Date;

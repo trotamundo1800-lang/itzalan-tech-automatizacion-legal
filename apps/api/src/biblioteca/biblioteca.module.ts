@@ -6,6 +6,7 @@ import { BibliotecaChunk } from './biblioteca-chunk.entity';
 import { BibliotecaController } from './biblioteca.controller';
 import { BibliotecaService } from './biblioteca.service';
 import { TextExtractionService } from './text-extraction.service';
+import { EmbeddingService } from './embedding.service';
 import { IaJuridicaModule } from '../ia-juridica/ia-juridica.module';
 
 @Module({
@@ -15,7 +16,7 @@ import { IaJuridicaModule } from '../ia-juridica/ia-juridica.module';
     IaJuridicaModule,
   ],
   controllers: [BibliotecaController],
-  providers: [BibliotecaService, TextExtractionService], // TextExtractionService will be instantiated but not used until process endpoint is called
+  providers: [BibliotecaService, TextExtractionService, EmbeddingService],
   exports: [BibliotecaService],
 })
 export class BibliotecaModule {}

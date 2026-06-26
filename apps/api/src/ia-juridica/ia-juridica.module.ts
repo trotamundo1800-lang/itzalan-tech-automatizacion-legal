@@ -19,5 +19,6 @@ import { IaProviderService } from './ia-provider.service';
   ],
   controllers: [IaJuridicaController],
   providers: [IaJuridicaService, IaProviderService],
+  exports: [IaJuridicaService],
 })
 export class IaJuridicaModule {}

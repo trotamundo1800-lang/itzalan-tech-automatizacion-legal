@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BibliotecaDocument, ExtractionStatus } from './biblioteca-document.entity';
 import { BibliotecaChunk } from './biblioteca-chunk.entity';
+import { EmbeddingService } from './embedding.service';
 
 interface TextExtractionResult {
   text: string;
@@ -22,6 +23,7 @@ export class TextExtractionService {
     private readonly docRepository: Repository<BibliotecaDocument>,
     @InjectRepository(BibliotecaChunk)
     private readonly chunkRepository: Repository<BibliotecaChunk>,
+    private readonly embeddingService: EmbeddingService,
   ) {
     this.logger.debug('TextExtractionService initialized');
   }
@@ -169,17 +171,27 @@ export class TextExtractionService {
       // Delete existing chunks
       await this.chunkRepository.delete({ documentoId: documentId });
 
-      // Save new chunks
+      // Generate embeddings for all chunks in batch
+      this.logger.log(`Generando embeddings para ${chunks.length} chunks`);
+      const embeddings = await this.embeddingService.generateEmbeddingsBatch(chunks);
+
+      // Save new chunks with embeddings
       const chunkEntities = chunks.map((content, index) => {
+        const embedding = embeddings[index];
         return this.chunkRepository.create({
           documentoId: documentId,
           content,
           chunkIndex: index,
           pageNumber: extraction.pageCount ? Math.floor(index / 5) + 1 : undefined,
-          metadata: {
+          metadata: JSON.stringify({
             wordCount: content.split(/\s+/).length,
             charCount: content.length,
-          },
+          }),
+          // Store embedding as JSON string for SQLite
+          embedding: embedding.embedding.length > 0 ? JSON.stringify(embedding.embedding) : undefined,
+          // Store embedding vector for PostgreSQL (if available)
+          embeddingVector: embedding.embedding.length > 0 ? embedding.embedding : undefined,
+          embeddingModel: embedding.embedding.length > 0 ? embedding.model : undefined,
         });
       });
 
@@ -221,10 +233,55 @@ export class TextExtractionService {
     return query.orderBy('chunk.chunkIndex', 'ASC').getMany();
   }
 
-  /** Search chunks by similarity (text-based, before vector embeddings) */
+  /** Search chunks by vector similarity (preferred) or keyword fallback */
   async searchChunks(query: string, limit: number = 5): Promise<BibliotecaChunk[]> {
-    // Simple keyword search on chunk content
-    // In production, would use vector similarity search
+    // Try vector-based search first
+    try {
+      const queryEmbedding = await this.embeddingService.generateEmbedding(query);
+      if (queryEmbedding.embedding.length > 0) {
+        return await this.searchChunksByVector(queryEmbedding.embedding, limit);
+      }
+    } catch (error) {
+      this.logger.warn(`Vector search failed, falling back to keyword search: ${(error as Error).message}`);
+    }
+
+    // Fallback to keyword search
+    return await this.searchChunksByKeyword(query, limit);
+  }
+
+  /** Search chunks using vector similarity */
+  private async searchChunksByVector(queryEmbedding: number[], limit: number = 5): Promise<BibliotecaChunk[]> {
+    const allChunks = await this.chunkRepository.find();
+
+    // Score all chunks by cosine similarity
+    const scored = allChunks
+      .map((chunk) => {
+        let chunkEmbedding: number[] = [];
+
+        // Try to get embedding from vector field first, then from JSON text field
+        if (chunk.embeddingVector && chunk.embeddingVector.length > 0) {
+          chunkEmbedding = chunk.embeddingVector;
+        } else if (chunk.embedding) {
+          try {
+            chunkEmbedding = JSON.parse(chunk.embedding);
+          } catch (e) {
+            // Invalid JSON, skip
+          }
+        }
+
+        const similarity = this.embeddingService.cosineSimilarity(queryEmbedding, chunkEmbedding);
+        return { chunk, similarity };
+      })
+      .filter((item) => item.similarity > 0) // Only include chunks with embeddings
+      .sort((a, b) => b.similarity - a.similarity); // Sort by relevance descending
+
+    this.logger.debug(`Vector search found ${scored.length} chunks with embeddings`);
+
+    return scored.slice(0, limit).map((item) => item.chunk);
+  }
+
+  /** Fallback: Search chunks using keyword matching */
+  private async searchChunksByKeyword(query: string, limit: number = 5): Promise<BibliotecaChunk[]> {
     const keywords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
 
     if (keywords.length === 0) {
@@ -243,6 +300,10 @@ export class TextExtractionService {
       params[`kw${i}`] = `%${keywords[i]}%`;
     }
 
-    return qb.where(where, params).orderBy('chunk.createdAt', 'DESC').limit(limit).getMany();
+    const results = await qb.where(where, params).orderBy('chunk.createdAt', 'DESC').limit(limit).getMany();
+
+    this.logger.debug(`Keyword search found ${results.length} chunks`);
+
+    return results;
   }
 }

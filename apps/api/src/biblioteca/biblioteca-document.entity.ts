@@ -57,7 +57,7 @@ export class BibliotecaDocument {
   extractionStatus!: ExtractionStatus;
 
   /** Timestamp when text extraction was completed */
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   extractedAt?: Date | null;
 
   /** Chunks of this document for RAG/embeddings */
