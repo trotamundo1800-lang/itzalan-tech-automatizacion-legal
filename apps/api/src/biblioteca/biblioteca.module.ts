@@ -15,7 +15,7 @@ import { IaJuridicaModule } from '../ia-juridica/ia-juridica.module';
     IaJuridicaModule,
   ],
   controllers: [BibliotecaController],
-  providers: [BibliotecaService, TextExtractionService],
-  exports: [TextExtractionService, BibliotecaService],
+  providers: [BibliotecaService, TextExtractionService], // TextExtractionService will be instantiated but not used until process endpoint is called
+  exports: [BibliotecaService],
 })
 export class BibliotecaModule {}

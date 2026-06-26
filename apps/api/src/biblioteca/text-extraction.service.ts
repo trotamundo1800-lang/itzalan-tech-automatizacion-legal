@@ -14,39 +14,68 @@ interface TextExtractionResult {
 @Injectable()
 export class TextExtractionService {
   private readonly logger = new Logger(TextExtractionService.name);
+  private pdfParse: any = null;
+  private mammoth: any = null;
 
   constructor(
     @InjectRepository(BibliotecaDocument)
     private readonly docRepository: Repository<BibliotecaDocument>,
     @InjectRepository(BibliotecaChunk)
     private readonly chunkRepository: Repository<BibliotecaChunk>,
-  ) {}
+  ) {
+    this.logger.debug('TextExtractionService initialized');
+  }
+
+  /** Lazy load pdf-parse only when needed */
+  private async getPdfParse() {
+    if (!this.pdfParse) {
+      try {
+        this.pdfParse = require('pdf-parse');
+      } catch (error) {
+        throw new BadRequestException('pdf-parse module not available');
+      }
+    }
+    return this.pdfParse;
+  }
+
+  /** Lazy load mammoth only when needed */
+  private async getMammoth() {
+    if (!this.mammoth) {
+      try {
+        this.mammoth = await import('mammoth');
+      } catch (error) {
+        throw new BadRequestException('mammoth module not available');
+      }
+    }
+    return this.mammoth;
+  }
 
   /** Extract text from PDF using pdf-parse */
   private async extractTextFromPdf(filePath: string): Promise<TextExtractionResult> {
     try {
-      // Lazy load pdf-parse to avoid module loading issues
-      const pdfParse = require('pdf-parse');
+      const pdfParse = await this.getPdfParse();
       const dataBuffer = fs.readFileSync(filePath);
       const data = await pdfParse(dataBuffer);
       return {
-        text: data.text,
-        pageCount: data.numpages,
+        text: data.text || '',
+        pageCount: data.numpages || 0,
       };
     } catch (error) {
-      throw new BadRequestException(`Error extrayendo PDF: ${(error as Error).message}`);
+      const msg = (error as Error).message || 'Unknown PDF parsing error';
+      throw new BadRequestException(`Error extrayendo PDF: ${msg}`);
     }
   }
 
   /** Extract text from DOCX using mammoth */
   private async extractTextFromDocx(filePath: string): Promise<TextExtractionResult> {
     try {
-      const mammoth = await import('mammoth');
+      const mammoth = await this.getMammoth();
       const buffer = fs.readFileSync(filePath);
-      const { value: text } = await mammoth.extractRawText({ buffer });
-      return { text };
+      const result = await (mammoth.extractRawText || mammoth.default.extractRawText)({ buffer });
+      return { text: result.value || '' };
     } catch (error) {
-      throw new BadRequestException(`Error extrayendo DOCX: ${(error as Error).message}`);
+      const msg = (error as Error).message || 'Unknown DOCX parsing error';
+      throw new BadRequestException(`Error extrayendo DOCX: ${msg}`);
     }
   }
 

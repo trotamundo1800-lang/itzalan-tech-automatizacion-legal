@@ -25,8 +25,8 @@ export class BibliotecaChunk {
   @Column('jsonb', { nullable: true })
   metadata?: Record<string, any>;
 
-  @Column('float8', { array: true, nullable: true })
-  embedding?: number[];
+  @Column('text', { nullable: true })
+  embedding?: string; // Stored as JSON string for SQLite compatibility
 
   @Column('varchar', { length: 100, nullable: true })
   embeddingModel?: string;

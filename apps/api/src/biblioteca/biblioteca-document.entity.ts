@@ -61,7 +61,7 @@ export class BibliotecaDocument {
   extractedAt?: Date | null;
 
   /** Chunks of this document for RAG/embeddings */
-  @OneToMany(() => BibliotecaChunk, (chunk) => chunk.documento, { lazy: false })
+  @OneToMany(() => BibliotecaChunk, (chunk) => chunk.documento, { lazy: true })
   chunks?: BibliotecaChunk[];
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })

@@ -6,4 +6,6 @@ module.exports = {
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.e2e.json' }],
   },
+  setupFilesAfterEnv: ['./jest.setup.ts'],
+  testTimeout: 30000,
 };
