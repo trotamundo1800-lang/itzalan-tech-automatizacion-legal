@@ -3,15 +3,29 @@
 import { CalendarDays, Clock3 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, Input, SectionHeader, Select } from '../../../components/ui';
-import { createAgendaEvent, getAgendaEvents, getClients, getExpedientes, toggleAgendaEvent } from '../../../lib/demoData';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
 import type { AgendaEventType } from '../../../types';
 
 const tipos: AgendaEventType[] = ['audiencia', 'reunion', 'vencimiento', 'tarea', 'seguimiento'];
 
+type ClientOption = { id: string; nombre: string };
+type ExpedienteOption = { id: string; numeroInterno: string };
+type AgendaEventItem = {
+  id: string;
+  titulo: string;
+  fecha: string;
+  hora: string;
+  tipoEvento: AgendaEventType;
+  clienteId: string | null;
+  expedienteId: string | null;
+  estado: 'pendiente' | 'completado';
+};
+
 export default function DashboardAgendaPage() {
-  const [clientes, setClientes] = useState<Awaited<ReturnType<typeof getClients>>>([]);
-  const [expedientes, setExpedientes] = useState<Awaited<ReturnType<typeof getExpedientes>>>([]);
-  const [eventos, setEventos] = useState<Awaited<ReturnType<typeof getAgendaEvents>>>([]);
+  const [clientes, setClientes] = useState<ClientOption[]>([]);
+  const [expedientes, setExpedientes] = useState<ExpedienteOption[]>([]);
+  const [eventos, setEventos] = useState<AgendaEventItem[]>([]);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     titulo: '',
     fecha: '',
@@ -22,17 +36,41 @@ export default function DashboardAgendaPage() {
     estado: 'pendiente' as const,
   });
 
+  async function getAuthHeaders() {
+    return getSessionAuthHeaders();
+  }
+
   useEffect(() => {
     void (async () => {
-      const [loadedClients, loadedExpedientes, loadedEvents] = await Promise.all([getClients(), getExpedientes(), getAgendaEvents()]);
-      setClientes(loadedClients);
-      setExpedientes(loadedExpedientes);
-      setEventos(loadedEvents);
+      try {
+        const [clientsResponse, expedientesResponse, eventsResponse] = await Promise.all([
+          apiFetch('/clients', { headers: await getAuthHeaders() }),
+          apiFetch('/expedientes', { headers: await getAuthHeaders() }),
+          apiFetch('/agenda', { headers: await getAuthHeaders() }),
+        ]);
+
+        if (clientsResponse.ok) {
+          setClientes((await clientsResponse.json()) as ClientOption[]);
+        }
+
+        if (expedientesResponse.ok) {
+          setExpedientes((await expedientesResponse.json()) as ExpedienteOption[]);
+        }
+
+        if (eventsResponse.ok) {
+          setEventos((await eventsResponse.json()) as AgendaEventItem[]);
+        }
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la agenda.');
+      }
     })();
   }, []);
 
   async function refresh() {
-    setEventos(await getAgendaEvents());
+    const response = await apiFetch('/agenda', { headers: await getAuthHeaders() });
+    if (response.ok) {
+      setEventos((await response.json()) as AgendaEventItem[]);
+    }
   }
 
   return (
@@ -44,11 +82,23 @@ export default function DashboardAgendaPage() {
           onSubmit={(event) => {
             event.preventDefault();
             void (async () => {
-              await createAgendaEvent({
-                ...form,
-                clienteId: form.clienteId || undefined,
-                expedienteId: form.expedienteId || undefined,
+              setError('');
+              const response = await apiFetch('/agenda', {
+                method: 'POST',
+                headers: await getAuthHeaders(),
+                body: JSON.stringify({
+                  ...form,
+                  clienteId: form.clienteId || undefined,
+                  expedienteId: form.expedienteId || undefined,
+                }),
               });
+
+              if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                setError((data as { message?: string | string[] } | null)?.message?.toString() ?? 'No se pudo registrar el evento.');
+                return;
+              }
+
               await refresh();
               setForm({
                 titulo: '',
@@ -76,7 +126,7 @@ export default function DashboardAgendaPage() {
             <option value="">Sin cliente</option>
             {clientes.map((cliente) => (
               <option key={cliente.id} value={cliente.id}>
-                {cliente.nombreCompleto}
+                {cliente.nombre}
               </option>
             ))}
           </Select>
@@ -112,7 +162,18 @@ export default function DashboardAgendaPage() {
                 variant={evento.estado === 'pendiente' ? 'secondary' : 'ghost'}
                 onClick={() => {
                   void (async () => {
-                    await toggleAgendaEvent(evento.id);
+                    const response = await apiFetch(`/agenda/${evento.id}`, {
+                      method: 'PATCH',
+                      headers: await getAuthHeaders(),
+                      body: JSON.stringify({ estado: evento.estado === 'pendiente' ? 'completado' : 'pendiente' }),
+                    });
+
+                    if (!response.ok) {
+                      const data = await response.json().catch(() => null);
+                      setError((data as { message?: string | string[] } | null)?.message?.toString() ?? 'No se pudo actualizar el evento.');
+                      return;
+                    }
+
                     await refresh();
                   })();
                 }}
@@ -125,6 +186,7 @@ export default function DashboardAgendaPage() {
       </Card>
 
       <Card title="Vista en lista">
+        {error ? <p className="mb-3 text-sm text-rose-300">{error}</p> : null}
         <div className="lex-table">
           <table>
             <thead>

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
+import { getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
 
 type DocumentoOption = {
   id: string;
@@ -138,10 +139,8 @@ export function IaJuridicaPanel() {
   } | null>(null);
   const [summaryExpedienteId, setSummaryExpedienteId] = useState('');
 
-  function getAuthHeaders() {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('itzalanAccessToken') : null;
-    if (!token) throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
-    return { Authorization: `Bearer ${token}` };
+  async function getAuthHeaders() {
+    return getSessionAuthHeaders();
   }
 
   async function loadConversations(selectConversationId?: string) {
@@ -150,7 +149,7 @@ export function IaJuridicaPanel() {
 
     try {
       const response = await apiFetch('/api/ia-juridica/conversations', {
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -164,7 +163,7 @@ export function IaJuridicaPanel() {
       const preferredId = selectConversationId ?? selectedConversation?.id;
       if (preferredId) {
         const detailResponse = await apiFetch(`/api/ia-juridica/conversations/${preferredId}`, {
-          headers: getAuthHeaders(),
+          headers: await getAuthHeaders(),
         });
 
         if (detailResponse.ok) {
@@ -191,9 +190,9 @@ export function IaJuridicaPanel() {
 
       try {
         const [docsResponse, expResponse, clientesResponse] = await Promise.all([
-          apiFetch('/api/documentos', { headers: getAuthHeaders() }),
-          apiFetch('/api/expedientes', { headers: getAuthHeaders() }),
-          apiFetch('/api/clientes', { headers: getAuthHeaders() }),
+          apiFetch('/api/documentos', { headers: await getAuthHeaders() }),
+          apiFetch('/api/expedientes', { headers: await getAuthHeaders() }),
+          apiFetch('/api/clientes', { headers: await getAuthHeaders() }),
         ]);
 
         if (!docsResponse.ok) {
@@ -236,7 +235,7 @@ export function IaJuridicaPanel() {
     try {
       const response = await apiFetch('/api/ia-juridica/conversations', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           title: createConversationForm.title.trim() || undefined,
           contextoJuridico: createConversationForm.contextoJuridico,
@@ -276,7 +275,7 @@ export function IaJuridicaPanel() {
 
     try {
       const response = await apiFetch(`/api/ia-juridica/conversations/${conversationId}`, {
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -309,7 +308,7 @@ export function IaJuridicaPanel() {
     try {
       const response = await apiFetch(`/api/ia-juridica/conversations/${selectedConversation.id}/messages`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           pregunta: messageForm.pregunta.trim(),
           contextoJuridico: messageForm.contextoJuridico,
@@ -345,7 +344,7 @@ export function IaJuridicaPanel() {
     try {
       const response = await apiFetch(`/api/ia-juridica/conversations/${selectedConversation.id}/associations`, {
         method: 'PATCH',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           clienteId: associateForm.clienteId || undefined,
           expedienteId: associateForm.expedienteId || undefined,
@@ -376,7 +375,7 @@ export function IaJuridicaPanel() {
     try {
       const response = await apiFetch('/api/ia-juridica/consultar', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           consulta: assistantForm.consulta.trim(),
           contexto: assistantForm.contexto,
@@ -418,7 +417,7 @@ export function IaJuridicaPanel() {
 
       const response = await apiFetch('/api/ia-juridica/analizar-documento', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify(payload),
       });
 
@@ -451,7 +450,7 @@ export function IaJuridicaPanel() {
     try {
       const response = await apiFetch('/api/ia-juridica/generar-borrador', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           tipoBorrador: draftForm.tipoBorrador.trim(),
           hechos: draftForm.hechos.trim(),
@@ -481,7 +480,7 @@ export function IaJuridicaPanel() {
     try {
       const response = await apiFetch('/api/ia-juridica/resumen-expediente', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({ expedienteId: summaryExpedienteId || undefined }),
       });
 
@@ -522,6 +521,11 @@ export function IaJuridicaPanel() {
             IA conversacional
           </div>
         </div>
+        {assistantResult?.modo === 'local' ? (
+          <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+            El backend está funcionando en modo local porque falta <span className="font-semibold">OPENAI_API_KEY</span> o la API respondió sin contenido.
+          </p>
+        ) : null}
 
         <div className="mt-5 grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
           <aside className="space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-4">

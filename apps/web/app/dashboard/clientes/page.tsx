@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Badge, Button, Card, Input, SectionHeader, Select } from '../../../components/ui';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
 
 type ApiClient = {
   id: string;
@@ -43,13 +43,8 @@ export default function DashboardClientesPage() {
   const [estadoFiltro, setEstadoFiltro] = useState<'todos' | 'activo' | 'inactivo'>('todos');
   const [error, setError] = useState('');
 
-  function getAuthHeaders() {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('itzalanAccessToken') : null;
-    if (!token) {
-      throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
-    }
-
-    return { Authorization: `Bearer ${token}` };
+  async function getAuthHeaders() {
+    return getSessionAuthHeaders();
   }
 
   useEffect(() => {
@@ -68,7 +63,7 @@ export default function DashboardClientesPage() {
   async function refresh() {
     setError('');
     try {
-      const response = await apiFetch('/clients', { headers: getAuthHeaders() });
+      const response = await apiFetch('/clients', { headers: await getAuthHeaders() });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         throw new Error(parseApiError(data, 'No se pudieron cargar los clientes.'));
@@ -88,7 +83,7 @@ export default function DashboardClientesPage() {
     try {
       const response = await apiFetch(editingId ? `/clients/${editingId}` : '/clients', {
         method: editingId ? 'PATCH' : 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify(form),
       });
 
@@ -188,7 +183,7 @@ export default function DashboardClientesPage() {
                         onClick={async () => {
                           const response = await apiFetch(`/clients/${cliente.id}`, {
                             method: 'DELETE',
-                            headers: getAuthHeaders(),
+                            headers: await getAuthHeaders(),
                           });
 
                           if (!response.ok) {

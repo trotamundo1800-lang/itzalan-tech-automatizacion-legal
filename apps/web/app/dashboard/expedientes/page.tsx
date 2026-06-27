@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Badge, Button, Card, Input, SectionHeader, Select } from '../../../components/ui';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
 
 type ClientOption = {
   id: string;
@@ -51,13 +51,8 @@ export default function DashboardExpedientesPage() {
   const [statusFilter, setStatusFilter] = useState<'todos' | 'abierto' | 'en_proceso' | 'cerrado'>('todos');
   const [error, setError] = useState('');
 
-  function getAuthHeaders() {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('itzalanAccessToken') : null;
-    if (!token) {
-      throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
-    }
-
-    return { Authorization: `Bearer ${token}` };
+  async function getAuthHeaders() {
+    return getSessionAuthHeaders();
   }
 
   useEffect(() => {
@@ -77,8 +72,8 @@ export default function DashboardExpedientesPage() {
     setError('');
     try {
       const [clientsResponse, expedientesResponse] = await Promise.all([
-        apiFetch('/clients', { headers: getAuthHeaders() }),
-        apiFetch('/expedientes', { headers: getAuthHeaders() }),
+        apiFetch('/clients', { headers: await getAuthHeaders() }),
+        apiFetch('/expedientes', { headers: await getAuthHeaders() }),
       ]);
 
       if (!clientsResponse.ok) {
@@ -112,7 +107,7 @@ export default function DashboardExpedientesPage() {
     try {
       const response = await apiFetch(editingId ? `/expedientes/${editingId}` : '/expedientes', {
         method: editingId ? 'PATCH' : 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify(form),
       });
 
@@ -231,7 +226,7 @@ export default function DashboardExpedientesPage() {
                         onClick={async () => {
                           const response = await apiFetch(`/expedientes/${expediente.id}`, {
                             method: 'DELETE',
-                            headers: getAuthHeaders(),
+                            headers: await getAuthHeaders(),
                           });
 
                           if (!response.ok) {

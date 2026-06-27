@@ -3,7 +3,7 @@
 import { Bot, Brain, LoaderCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, SectionHeader, Select, Textarea } from '../../../components/ui';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
 import type { IaAnalysisType } from '../../../types';
 
 const analysisTypes: IaAnalysisType[] = [
@@ -21,17 +21,13 @@ export default function DashboardIaPage() {
   const [loading, setLoading] = useState(false);
   const [respuesta, setRespuesta] = useState('');
   const [error, setError] = useState('');
+  const [providerMode, setProviderMode] = useState<'openai' | 'local' | null>(null);
   const [historial, setHistorial] = useState<
     Array<{ id: string; consulta: string; respuesta: string; fecha: string; contextoJuridico: string; modo: string }>
   >([]);
 
-  function getAuthHeaders() {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('itzalanAccessToken') : null;
-    if (!token) {
-      throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
-    }
-
-    return { Authorization: `Bearer ${token}` };
+  async function getAuthHeaders() {
+    return getSessionAuthHeaders();
   }
 
   function parseApiError(data: unknown, fallback: string) {
@@ -58,7 +54,7 @@ export default function DashboardIaPage() {
   async function refreshHistory() {
     setError('');
     try {
-      const response = await apiFetch('/api/ia-juridica/historial?limit=25', { headers: getAuthHeaders() });
+      const response = await apiFetch('/api/ia-juridica/historial?limit=25', { headers: await getAuthHeaders() });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         throw new Error(parseApiError(data, 'No se pudo cargar historial IA.'));
@@ -93,7 +89,7 @@ export default function DashboardIaPage() {
     try {
       const response = await apiFetch('/api/ia-juridica/consultar', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           consulta: caso,
           tipoAnalisis: mapAnalysisType(analysisType),
@@ -106,8 +102,9 @@ export default function DashboardIaPage() {
         throw new Error(parseApiError(data, 'No se pudo consultar IA Jurídica.'));
       }
 
-      const data = (await response.json()) as { respuesta: string };
+  const data = (await response.json()) as { respuesta: string; modo?: 'openai' | 'local' };
       setRespuesta(data.respuesta);
+  setProviderMode(data.modo ?? null);
       await refreshHistory();
     } catch (analyzeError) {
       setError(analyzeError instanceof Error ? analyzeError.message : 'No se pudo consultar IA Jurídica.');
@@ -122,8 +119,13 @@ export default function DashboardIaPage() {
         <SectionHeader
           title="Asistente jurídico profesional"
           subtitle="Analiza riesgo, estrategia y redacción legal con formato estructurado"
-          action={<Badge tone="success">Modo API real</Badge>}
+          action={<Badge tone={providerMode === 'local' ? 'warning' : 'success'}>{providerMode === 'local' ? 'Modo local' : 'Modo API real'}</Badge>}
         />
+        {providerMode === 'local' ? (
+          <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+            El backend no encontró <span className="font-semibold">OPENAI_API_KEY</span>. La IA responde en modo local hasta configurar esa variable.
+          </p>
+        ) : null}
         <form onSubmit={onAnalyze} className="grid gap-3">
           <Textarea className="mt-0" rows={8} value={caso} onChange={(e) => setCaso(e.target.value)} placeholder="Pega el caso o hechos relevantes" required />
           <Select className="mt-0" value={analysisType} onChange={(e) => setAnalysisType(e.target.value as IaAnalysisType)}>

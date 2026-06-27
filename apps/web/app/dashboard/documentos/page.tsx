@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { FileBadge2, FileText, ScrollText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, Input, SectionHeader, Select, Textarea } from '../../../components/ui';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
 import type { DocumentTemplate } from '../../../types';
 
 const templates: DocumentTemplate[] = [
@@ -48,13 +48,8 @@ export default function DashboardDocumentosPage() {
   >([]);
   const [expedientes, setExpedientes] = useState<Array<{ id: string; numeroInterno: string; tipo: string }>>([]);
 
-  function getAuthHeaders() {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('itzalanAccessToken') : null;
-    if (!token) {
-      throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
-    }
-
-    return { Authorization: `Bearer ${token}` };
+  async function getAuthHeaders() {
+    return getSessionAuthHeaders();
   }
 
   function parseApiError(data: unknown, fallback: string) {
@@ -70,8 +65,8 @@ export default function DashboardDocumentosPage() {
     setError('');
     try {
       const [documentosResponse, expedientesResponse] = await Promise.all([
-        apiFetch('/documentos', { headers: getAuthHeaders() }),
-        apiFetch('/expedientes', { headers: getAuthHeaders() }),
+        apiFetch('/documentos', { headers: await getAuthHeaders() }),
+        apiFetch('/expedientes', { headers: await getAuthHeaders() }),
       ]);
 
       if (!documentosResponse.ok) {
@@ -135,7 +130,7 @@ export default function DashboardDocumentosPage() {
     try {
       const response = await apiFetch(`/documentos/${documentId}/generar`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({ formato: outputFormat }),
       });
 
@@ -180,7 +175,7 @@ export default function DashboardDocumentosPage() {
   return (
     <>
       <Card title="Generador de documentos legales" subtitle="Selecciona plantilla y genera vista previa">
-        <SectionHeader title="Plantillas legales" subtitle="Selecciona un tipo de documento para iniciar la redacción" />
+        <SectionHeader title="Plantillas legales" subtitle="Selecciona un tipo de documento para iniciar la redaccion" />
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {templates.map((item) => (
             <button
@@ -197,7 +192,7 @@ export default function DashboardDocumentosPage() {
                 <span className="text-sm font-semibold text-slate-100">{item}</span>
                 <Badge tone={template === item ? 'success' : 'neutral'}>{template === item ? 'Activo' : 'Plantilla'}</Badge>
               </div>
-              <p className="mt-2 text-xs text-slate-400">Formato optimizado para gestión jurídica profesional.</p>
+              <p className="mt-2 text-xs text-slate-400">Formato optimizado para gestion juridica profesional.</p>
             </button>
           ))}
         </div>
@@ -222,7 +217,7 @@ export default function DashboardDocumentosPage() {
             try {
               const response = await apiFetch(editingId ? `/documentos/${editingId}` : '/documentos', {
                 method: editingId ? 'PATCH' : 'POST',
-                headers: getAuthHeaders(),
+                headers: await getAuthHeaders(),
                 body: JSON.stringify(payload),
               });
 
@@ -263,13 +258,13 @@ export default function DashboardDocumentosPage() {
             <option value="pdf">PDF</option>
             <option value="docx">DOCX</option>
           </Select>
-          <Input className="mt-0" placeholder="Título del documento" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
+          <Input className="mt-0" placeholder="Titulo del documento" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
           <Textarea className="mt-0" rows={6} placeholder="Datos para el documento" value={datos} onChange={(e) => setDatos(e.target.value)} required />
           <Select className="mt-0" value={expedienteId} onChange={(e) => setExpedienteId(e.target.value)}>
             <option value="">Sin expediente</option>
             {expedientes.map((expediente) => (
               <option key={expediente.id} value={expediente.id}>
-                {expediente.numeroInterno} · {expediente.tipo}
+                {expediente.numeroInterno} - {expediente.tipo}
               </option>
             ))}
           </Select>
@@ -320,13 +315,13 @@ export default function DashboardDocumentosPage() {
             <li key={documento.id} className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p>
-                  {documento.nombreArchivo} · {documento.tipoDocumento} · {documento.formato.toUpperCase()}
+                  {documento.nombreArchivo} - {documento.tipoDocumento} - {documento.formato.toUpperCase()}
                 </p>
                 <Badge tone="neutral">{new Date(documento.createdAt).toLocaleString()}</Badge>
               </div>
               <p className="mt-2 line-clamp-2 text-xs text-slate-400">{documento.plantilla}</p>
               <p className="mt-1 text-xs text-slate-500">
-                Historial de generación: {documento.generations?.length ?? 0}
+                Historial de generacion: {documento.generations?.length ?? 0}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
@@ -355,7 +350,8 @@ export default function DashboardDocumentosPage() {
                   onClick={async () => {
                     setError('');
                     try {
-                      const response = await apiFetch(`/documentos/${documento.id}`, { headers: getAuthHeaders() });
+                      const response = await apiFetch(`/documentos/${documento.id}`, { headers: await getAuthHeaders() });
+                      
                       if (!response.ok) {
                         const data = await response.json().catch(() => null);
                         throw new Error(parseApiError(data, 'No se pudo cargar el documento.'));
@@ -378,7 +374,7 @@ export default function DashboardDocumentosPage() {
                       setDatos(fullDoc.plantilla);
                       setExpedienteId(fullDoc.expedienteId ?? '');
                       setPreview(fullDoc.contenidoTexto);
-                      setSaved('Documento cargado para edición.');
+                      setSaved('Documento cargado para edicion.');
                     } catch (viewError) {
                       setError(viewError instanceof Error ? viewError.message : 'No se pudo cargar el documento.');
                     }
@@ -394,7 +390,7 @@ export default function DashboardDocumentosPage() {
                     try {
                       const response = await apiFetch(`/documentos/${documento.id}`, {
                         method: 'DELETE',
-                        headers: getAuthHeaders(),
+                        headers: await getAuthHeaders(),
                       });
 
                       if (!response.ok) {

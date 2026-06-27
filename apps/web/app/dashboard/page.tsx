@@ -5,34 +5,75 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { BellRing, Bot, CalendarClock, FilePlus2, Scale, TriangleAlert } from 'lucide-react';
 import { Badge, Card, InfoBand, StatCard } from '../../components/ui';
-import { getAgendaEvents, getClients, getDashboardSnapshot, getExpedientes } from '../../lib/demoData';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../lib/api';
+
+type DashboardClient = { id: string; nombre: string };
+type DashboardExpediente = { id: string; numeroInterno: string; estado: string; tipo: string; clienteId?: string; proximaAudiencia?: string };
+type DashboardDocumento = { id: string; nombreArchivo: string; createdAt: string };
+type DashboardAgendaEvent = { id: string; titulo: string; fecha: string; hora: string; tipoEvento: string; estado: 'pendiente' | 'completado' };
+type DashboardIaItem = { id: string; fecha: string };
+
+type DashboardSnapshot = {
+  clientesRegistrados: number;
+  expedientesActivos: number;
+  documentosGenerados: number;
+  audienciasProximas: number;
+  consultasIaRealizadas: number;
+  pagosPendientes: number;
+  alertas: string[];
+};
 
 export default function DashboardPage() {
-  const [snapshot, setSnapshot] = useState<Awaited<ReturnType<typeof getDashboardSnapshot>> | null>(null);
-  const [expedientes, setExpedientes] = useState<Awaited<ReturnType<typeof getExpedientes>>>([]);
-  const [clients, setClients] = useState<Awaited<ReturnType<typeof getClients>>>([]);
-  const [agenda, setAgenda] = useState<Awaited<ReturnType<typeof getAgendaEvents>>>([]);
+  const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
+  const [expedientes, setExpedientes] = useState<DashboardExpediente[]>([]);
+  const [clients, setClients] = useState<DashboardClient[]>([]);
+  const [agenda, setAgenda] = useState<DashboardAgendaEvent[]>([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     void (async () => {
-      const [loadedSnapshot, loadedExpedientes, loadedClients, loadedAgenda] = await Promise.all([
-        getDashboardSnapshot(),
-        getExpedientes(),
-        getClients(),
-        getAgendaEvents(),
-      ]);
-      setSnapshot(loadedSnapshot);
-      setExpedientes(loadedExpedientes);
-      setClients(loadedClients);
-      setAgenda(loadedAgenda);
+      try {
+        const headers = await getSessionAuthHeaders();
+        const [clientsResponse, expedientesResponse, documentosResponse, agendaResponse, historialResponse] = await Promise.all([
+          apiFetch('/clients', { headers }),
+          apiFetch('/expedientes', { headers }),
+          apiFetch('/documentos', { headers }),
+          apiFetch('/agenda', { headers }),
+          apiFetch('/api/ia-juridica/historial?limit=100', { headers }),
+        ]);
+
+        const loadedClients = (await clientsResponse.json()) as DashboardClient[];
+        const loadedExpedientes = (await expedientesResponse.json()) as DashboardExpediente[];
+        const loadedDocumentos = (await documentosResponse.json()) as DashboardDocumento[];
+        const loadedAgenda = (await agendaResponse.json()) as DashboardAgendaEvent[];
+        const loadedHistorial = (await historialResponse.json()) as DashboardIaItem[];
+
+        setClients(loadedClients);
+        setExpedientes(loadedExpedientes);
+        setAgenda(loadedAgenda);
+
+        const snapshotData: DashboardSnapshot = {
+          clientesRegistrados: loadedClients.length,
+          expedientesActivos: loadedExpedientes.filter((expediente) => expediente.estado !== 'cerrado').length,
+          documentosGenerados: loadedDocumentos.length,
+          audienciasProximas: loadedAgenda.filter((evento) => evento.estado === 'pendiente').length,
+          consultasIaRealizadas: loadedHistorial.length,
+          pagosPendientes: 0,
+          alertas: loadedAgenda.filter((evento) => evento.estado === 'pendiente').length > 0 ? ['Hay eventos pendientes en agenda.'] : [],
+        };
+
+        setSnapshot(snapshotData);
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar el panel ejecutivo.');
+      }
     })();
   }, []);
 
   if (!snapshot) {
-    return <div className="space-y-6 text-slate-300">Cargando panel ejecutivo...</div>;
+    return <div className="space-y-6 text-slate-300">{error || 'Cargando panel ejecutivo...'}</div>;
   }
 
-  const getClientName = (clientId: string) => clients.find((client) => client.id === clientId)?.nombreCompleto ?? 'Sin asignar';
+  const getClientName = (clientId?: string | null) => (clientId ? clients.find((client) => client.id === clientId)?.nombre ?? 'Sin asignar' : 'Sin asignar');
 
   const cards = [
     { label: 'Clientes activos', value: String(snapshot.clientesRegistrados), icon: <Scale className="h-5 w-5" /> },
@@ -165,21 +206,15 @@ export default function DashboardPage() {
                   <tr key={expediente.id}>
                     <td>{expediente.numeroInterno}</td>
                     <td>{getClientName(expediente.clienteId)}</td>
-                    <td>{expediente.tipoCaso}</td>
+                    <td>{expediente.tipo}</td>
                     <td>
                       <Badge
-                        tone={
-                          expediente.estado === 'abierto'
-                            ? 'success'
-                            : expediente.estado === 'en-curso'
-                              ? 'warning'
-                              : 'neutral'
-                        }
+                        tone={expediente.estado === 'abierto' ? 'success' : expediente.estado === 'en-curso' ? 'warning' : 'neutral'}
                       >
                         {expediente.estado}
                       </Badge>
                     </td>
-                    <td>{expediente.proximaAudiencia}</td>
+                    <td>{expediente.proximaAudiencia ?? 'Sin audiencia'}</td>
                   </tr>
                 ))}
               </tbody>

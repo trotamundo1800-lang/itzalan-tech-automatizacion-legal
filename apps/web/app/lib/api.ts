@@ -30,20 +30,85 @@ function clearExpiredSession() {
   window.dispatchEvent(new Event('authChange'));
 }
 
+async function refreshSession() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const refreshToken = localStorage.getItem('itzalanRefreshToken');
+  if (!refreshToken) {
+    return null;
+  }
+
+  const response = await fetch(resolveApiUrl('/auth/refresh'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!response.ok) {
+    clearExpiredSession();
+    return null;
+  }
+
+  const data = (await response.json().catch(() => null)) as { accessToken?: string; refreshToken?: string } | null;
+  if (!data?.accessToken || !data.refreshToken) {
+    clearExpiredSession();
+    return null;
+  }
+
+  localStorage.setItem('itzalanAccessToken', data.accessToken);
+  localStorage.setItem('itzalanRefreshToken', data.refreshToken);
+  window.dispatchEvent(new Event('authChange'));
+  return data.accessToken;
+}
+
+export async function getAuthHeaders(): Promise<Record<string, string>> {
+  if (typeof window === 'undefined') {
+    return {} as Record<string, string>;
+  }
+
+  const accessToken = localStorage.getItem('itzalanAccessToken');
+  if (accessToken) {
+    return { Authorization: `Bearer ${accessToken}` };
+  }
+
+  const refreshedToken = await refreshSession();
+  if (refreshedToken) {
+    return { Authorization: `Bearer ${refreshedToken}` };
+  }
+
+  throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
+}
+
 export async function apiFetch(path: string, init: RequestInit = {}) {
+  const resolvedUrl = resolveApiUrl(path);
   const headers = {
     'Content-Type': 'application/json',
     ...(init.headers || {}),
   } as Record<string, string>;
 
-  const response = await fetch(resolveApiUrl(path), {
+  const response = await fetch(resolvedUrl, {
     ...init,
     headers,
   });
 
-  if (response.status === 401) {
-    clearExpiredSession();
+  if (response.status !== 401 || resolvedUrl.includes('/auth/')) {
+    return response;
   }
 
-  return response;
+  const refreshedToken = await refreshSession();
+  if (!refreshedToken) {
+    return response;
+  }
+
+  return fetch(resolvedUrl, {
+    ...init,
+    headers: {
+      ...headers,
+      Authorization: `Bearer ${refreshedToken}`,
+    },
+  });
 }
