@@ -11,13 +11,10 @@ import { CreateConversationDto } from './dto/create-conversation.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { AssociateConversationDto } from './dto/associate-conversation.dto';
 import { FindConversationsQueryDto } from './dto/find-conversations-query.dto';
-import { PremiumGuard } from '../subscriptions/premium.guard';
-import { PremiumFeature } from '../subscriptions/premium-feature.decorator';
 
 @Controller(['api/ia-juridica', 'ia-juridica'])
-@UseGuards(JwtAuthGuard, RolesGuard, PremiumGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin', 'abogado', 'asistente')
-@PremiumFeature()
 export class IaJuridicaController {
   constructor(private readonly iaJuridicaService: IaJuridicaService) {}
 

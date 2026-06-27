@@ -81,20 +81,20 @@ describe('Subscriptions E2E', () => {
     expect(updateResponse.body.isActive).toBe(false);
   });
 
-  it('should block premium endpoints without active subscription and allow after checkout', async () => {
+  it('should allow ia juridica access for authenticated users before and after checkout', async () => {
     const noSubAuth = await getAuthToken(baseUrl, { role: 'abogado' });
 
-    const blockedResponse = await api
+    const initialResponse = await api
       .post('/api/ia-juridica/generar-borrador')
       .set('Authorization', `Bearer ${noSubAuth.accessToken}`)
       .send({
         tipoBorrador: 'Demanda',
-        hechos: 'Hechos de prueba para bloqueo premium sin suscripción activa.',
-        objetivo: 'Validar restricción premium.',
+        hechos: 'Hechos de prueba para acceso IA sin suscripcion activa.',
+        objetivo: 'Validar acceso autenticado al modulo IA.',
       });
 
-    expect(blockedResponse.status).toBe(403);
-    expect(blockedResponse.body.message).toBe('Se requiere suscripción activa para esta función premium');
+    expect(initialResponse.status).toBe(201);
+    expect(typeof initialResponse.body.borrador).toBe('string');
 
     const plans = await getPlans(noSubAuth.accessToken, baseUrl);
     const basic = plans.find((plan) => plan.code === 'basic');

@@ -435,7 +435,6 @@ export class IaJuridicaService {
 
   async virtualAssistant(userId: string, payload: VirtualAssistantDto) {
     await this.ensureUserExists(userId);
-    await this.subscriptionQuotaService.assertAiLimit(userId);
 
     const tipoAnalisis = payload.tipoAnalisis ?? 'analisis_juridico';
     const turn = await this.buildAssistantTurn({
@@ -517,7 +516,6 @@ export class IaJuridicaService {
 
   async analyzeDocument(userId: string, payload: AnalyzeDocumentDto) {
     await this.ensureUserExists(userId);
-    await this.subscriptionQuotaService.assertAiLimit(userId);
     let content = payload.contenido?.trim() || '';
 
     if (payload.documentoId) {
@@ -561,7 +559,6 @@ export class IaJuridicaService {
 
   async generateDraft(userId: string, payload: GenerateDraftDto) {
     await this.ensureUserExists(userId);
-    await this.subscriptionQuotaService.assertAiLimit(userId);
     const fallback = [
       `Borrador inicial de ${payload.tipoBorrador}.`,
       `Hechos relevantes: ${payload.hechos}`,
@@ -585,7 +582,6 @@ export class IaJuridicaService {
 
   async summarizeExpediente(userId: string, payload: ExpedienteSummaryDto) {
     await this.ensureUserExists(userId);
-    await this.subscriptionQuotaService.assertAiLimit(userId);
     const expediente = await this.expedienteRepository.findOne({
       where: { id: payload.expedienteId },
       relations: { cliente: true },
