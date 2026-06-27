@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from 'typeorm';
 import { AiConversation } from './ai-conversation.entity';
 
-export type AiMode = 'local' | 'openai';
+export type AiMode = 'local' | 'openai' | 'anthropic';
 
 @Entity({ name: 'ai_messages' })
 export class AiMessage {

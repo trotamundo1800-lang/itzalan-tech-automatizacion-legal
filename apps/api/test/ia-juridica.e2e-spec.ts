@@ -71,7 +71,7 @@ describe('IA Juridica E2E', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(['openai', 'local']).toContain(response.body.modo);
+    expect(['openai', 'anthropic', 'local']).toContain(response.body.modo);
     expect(typeof response.body.respuesta).toBe('string');
     expect(response.body.respuesta.length).toBeGreaterThan(20);
     expect(Array.isArray(response.body.accionesSugeridas)).toBe(true);
@@ -120,7 +120,7 @@ describe('IA Juridica E2E', () => {
     expect(Array.isArray(messageResponse.body.messages)).toBe(true);
     expect(messageResponse.body.messages).toHaveLength(1);
     expect(messageResponse.body.messages[0].preguntaUsuario).toContain('Necesito una primera estrategia');
-    expect(['openai', 'local']).toContain(messageResponse.body.messages[0].modo);
+    expect(['openai', 'anthropic', 'local']).toContain(messageResponse.body.messages[0].modo);
   });
 
   it('should list and retrieve IA conversation history', async () => {
@@ -192,7 +192,7 @@ describe('IA Juridica E2E', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(['openai', 'local']).toContain(response.body.modo);
+    expect(['openai', 'anthropic', 'local']).toContain(response.body.modo);
     expect(typeof response.body.analisis).toBe('string');
     expect(response.body.analisis.length).toBeGreaterThan(20);
     expect(Array.isArray(response.body.recomendaciones)).toBe(true);
@@ -222,7 +222,7 @@ describe('IA Juridica E2E', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(['openai', 'local']).toContain(response.body.modo);
+    expect(['openai', 'anthropic', 'local']).toContain(response.body.modo);
     expect(typeof response.body.analisis).toBe('string');
     expect(response.body.analisis.length).toBeGreaterThan(20);
   });
@@ -239,7 +239,7 @@ describe('IA Juridica E2E', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(['openai', 'local']).toContain(response.body.modo);
+    expect(['openai', 'anthropic', 'local']).toContain(response.body.modo);
     expect(response.body.tipoBorrador).toBe('Demanda civil');
     expect(typeof response.body.borrador).toBe('string');
     expect(response.body.borrador.length).toBeGreaterThan(20);
@@ -279,7 +279,7 @@ describe('IA Juridica E2E', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(['openai', 'local']).toContain(response.body.modo);
+    expect(['openai', 'anthropic', 'local']).toContain(response.body.modo);
     expect(response.body.expedienteId).toBe(expediente.id);
     expect(typeof response.body.resumen).toBe('string');
     expect(response.body.resumen.length).toBeGreaterThan(20);
