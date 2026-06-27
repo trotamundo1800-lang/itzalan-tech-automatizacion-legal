@@ -29,7 +29,7 @@ export function validateRegisterForm(input: {
   const passwordError = validatePassword(input.password);
   if (passwordError) return passwordError;
 
-  if (!['cliente', 'abogado', 'asistente'].includes(input.role)) {
+  if (!['cliente', 'admin', 'abogado', 'asistente'].includes(input.role)) {
     return 'Selecciona un rol válido';
   }
 

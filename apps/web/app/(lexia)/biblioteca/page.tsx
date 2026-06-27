@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { FeatureShell } from '../feature-shell';
 import { featureModules } from '../feature-data';
+import { apiFetch } from '../../lib/api';
 
 type TipoDocumento = 'ley' | 'reglamento' | 'jurisprudencia' | 'doctrina' | 'formulario' | 'otro';
 
@@ -60,8 +61,6 @@ function parseApiError(data: unknown, fallback: string): string {
   return fallback;
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
 export default function BibliotecaPage() {
   const [docs, setDocs] = useState<BibliotecaDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +92,7 @@ export default function BibliotecaPage() {
       const params = new URLSearchParams();
       if (filterTipo) params.set('tipoDocumento', filterTipo);
       if (search.trim()) params.set('q', search.trim());
-      const res = await fetch(`${API}/api/biblioteca?${params}`, {
+      const res = await apiFetch(`/api/biblioteca?${params}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();
@@ -167,7 +166,7 @@ export default function BibliotecaPage() {
           }
         };
         xhr.onerror = () => reject(new Error('Error de conexión al subir el archivo'));
-        xhr.open('POST', `${API}/api/biblioteca/upload`);
+        xhr.open('POST', '/api/biblioteca/upload');
         xhr.setRequestHeader('Authorization', `Bearer ${getToken()}`);
         xhr.send(formData);
       });
@@ -190,7 +189,7 @@ export default function BibliotecaPage() {
   async function handleDelete(doc: BibliotecaDoc) {
     if (!confirm(`¿Eliminar "${doc.titulo}"? Esta acción también borrará el archivo.`)) return;
     try {
-      const res = await fetch(`${API}/api/biblioteca/${doc.id}`, {
+      const res = await apiFetch(`/api/biblioteca/${doc.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${getToken()}` },
       });
@@ -207,7 +206,7 @@ export default function BibliotecaPage() {
   }
 
   function downloadUrl(id: string) {
-    return `${API}/api/biblioteca/${id}/file`;
+    return `/api/biblioteca/${id}/file`;
   }
 
   const displayed = search.trim()

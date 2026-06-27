@@ -29,6 +29,6 @@ describe('web auth validation', () => {
         password: '12345678',
         role: 'admin',
       }),
-    ).toBe('Selecciona un rol válido');
+    ).toBeNull();
   });
 });

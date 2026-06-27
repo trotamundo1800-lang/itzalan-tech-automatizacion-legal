@@ -22,7 +22,7 @@ describe('mobile auth validation', () => {
         name: 'Ana',
         email: 'ana@itzalan.com',
         password: '12345678',
-        role: 'admin',
+        role: 'superadmin',
       }),
     ).toBe('Selecciona un rol válido');
   });

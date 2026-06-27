@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { CheckCircle2, Gauge, MessageSquareQuote, ShieldCheck } from 'lucide-react';
-import { API_BASE_URL } from '../lib/api';
+import { apiFetch } from '../lib/api';
 import { HeroPanel, InfoBand, PageShell, SectionHeader, SurfaceCard, StatusBanner } from '../../components/ui';
 
 type FormData = {
@@ -87,7 +87,7 @@ export default function FeedbackPage() {
     setSubmitError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/feedback`, {
+      const response = await apiFetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

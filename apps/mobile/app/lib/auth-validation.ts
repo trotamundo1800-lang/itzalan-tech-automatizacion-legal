@@ -25,7 +25,7 @@ export function validateMobileRegisterForm(input: {
   const passwordError = validateMobilePassword(input.password);
   if (passwordError) return passwordError;
 
-  if (!['cliente', 'abogado', 'asistente'].includes(input.role)) {
+  if (!['cliente', 'admin', 'abogado', 'asistente'].includes(input.role)) {
     return 'Selecciona un rol válido';
   }
 
