@@ -14,7 +14,7 @@ import { FindConversationsQueryDto } from './dto/find-conversations-query.dto';
 import { PremiumGuard } from '../subscriptions/premium.guard';
 import { PremiumFeature } from '../subscriptions/premium-feature.decorator';
 
-@Controller('api/ia-juridica')
+@Controller(['api/ia-juridica', 'ia-juridica'])
 @UseGuards(JwtAuthGuard, RolesGuard, PremiumGuard)
 @Roles('admin', 'abogado', 'asistente')
 @PremiumFeature()

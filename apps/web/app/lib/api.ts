@@ -3,7 +3,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 export const API_BASE_URL = isProduction ? '/api' : (process.env.NEXT_PUBLIC_API_URL ?? '/api');
 
 export function resolveApiUrl(path: string) {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const rawPath = path.startsWith('/') ? path : `/${path}`;
+  const normalizedPath = rawPath === '/ia-juridica' || rawPath.startsWith('/ia-juridica/') ? `/api${rawPath}` : rawPath;
 
   if (API_BASE_URL === '/api') {
     if (normalizedPath === '/api' || normalizedPath.startsWith('/api/')) {

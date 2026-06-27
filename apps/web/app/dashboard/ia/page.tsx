@@ -6,6 +6,8 @@ import { Badge, Button, Card, SectionHeader, Select, Textarea } from '../../../c
 import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
 import type { IaAnalysisType } from '../../../types';
 
+const IA_API_PREFIX = '/api/ia-juridica';
+
 const analysisTypes: IaAnalysisType[] = [
   'Análisis legal',
   'Resumen del caso',
@@ -21,7 +23,7 @@ export default function DashboardIaPage() {
   const [loading, setLoading] = useState(false);
   const [respuesta, setRespuesta] = useState('');
   const [error, setError] = useState('');
-  const [providerMode, setProviderMode] = useState<'openai' | 'local' | null>(null);
+  const [providerMode, setProviderMode] = useState<'anthropic' | 'openai' | 'local' | null>(null);
   const [historial, setHistorial] = useState<
     Array<{ id: string; consulta: string; respuesta: string; fecha: string; contextoJuridico: string; modo: string }>
   >([]);
@@ -54,7 +56,7 @@ export default function DashboardIaPage() {
   async function refreshHistory() {
     setError('');
     try {
-      const response = await apiFetch('/api/ia-juridica/historial?limit=25', { headers: await getAuthHeaders() });
+      const response = await apiFetch(`${IA_API_PREFIX}/historial?limit=25`, { headers: await getAuthHeaders() });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         throw new Error(parseApiError(data, 'No se pudo cargar historial IA.'));
@@ -87,7 +89,7 @@ export default function DashboardIaPage() {
     setLoading(true);
 
     try {
-      const response = await apiFetch('/api/ia-juridica/consultar', {
+      const response = await apiFetch(`${IA_API_PREFIX}/consultar`, {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
@@ -102,9 +104,9 @@ export default function DashboardIaPage() {
         throw new Error(parseApiError(data, 'No se pudo consultar IA Jurídica.'));
       }
 
-  const data = (await response.json()) as { respuesta: string; modo?: 'openai' | 'local' };
+      const data = (await response.json()) as { respuesta: string; modo?: 'anthropic' | 'openai' | 'local' };
       setRespuesta(data.respuesta);
-  setProviderMode(data.modo ?? null);
+      setProviderMode(data.modo ?? null);
       await refreshHistory();
     } catch (analyzeError) {
       setError(analyzeError instanceof Error ? analyzeError.message : 'No se pudo consultar IA Jurídica.');
@@ -123,7 +125,7 @@ export default function DashboardIaPage() {
         />
         {providerMode === 'local' ? (
           <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
-            El backend no encontró <span className="font-semibold">OPENAI_API_KEY</span>. La IA responde en modo local hasta configurar esa variable.
+            El backend no encontró una clave de proveedor IA (`ANTHROPIC_API_KEY` o `OPENAI_API_KEY`). La IA responde en modo local hasta configurar esa variable.
           </p>
         ) : null}
         <form onSubmit={onAnalyze} className="grid gap-3">
