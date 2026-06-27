@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "start": "node dist/main.js",
     "build": "tsc -p tsconfig.json",
     "db:migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
     "db:migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",

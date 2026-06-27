@@ -3,9 +3,26 @@
 import { useState } from 'react';
 import { Building2, Clock3, Mail, Phone } from 'lucide-react';
 import { Button, Card, HeroPanel, PageShell, SectionHeader, SurfaceCard } from '../../components/ui';
+import { apiFetch } from '../lib/api';
+
+function parseApiError(data: unknown, fallback: string) {
+  if (typeof data === 'object' && data !== null && 'message' in data) {
+    const message = (data as { message?: string | string[] }).message;
+    if (Array.isArray(message)) return message[0] ?? fallback;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+
+  return fallback;
+}
 
 export default function ContactoPage() {
+  const [nombre, setNombre] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [mensaje, setMensaje] = useState('');
   const [enviado, setEnviado] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   return (
     <PageShell>
@@ -24,29 +41,60 @@ export default function ContactoPage() {
         <Card title="Formulario de contacto" subtitle="Te responderemos en menos de 24 horas hábiles.">
           <form
             className="grid gap-4"
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
-              setEnviado(true);
+
+              setLoading(true);
+              setError('');
+              setEnviado(false);
+
+              try {
+                const response = await apiFetch('/api/contacto', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    nombre: nombre.trim(),
+                    telefono: telefono.trim(),
+                    correo: correo.trim(),
+                    mensaje: mensaje.trim(),
+                  }),
+                });
+
+                if (!response.ok) {
+                  const data = await response.json().catch(() => null);
+                  throw new Error(parseApiError(data, 'No se pudo enviar la solicitud.'));
+                }
+
+                setEnviado(true);
+                setNombre('');
+                setTelefono('');
+                setCorreo('');
+                setMensaje('');
+              } catch (submitError) {
+                setError(submitError instanceof Error ? submitError.message : 'No se pudo enviar la solicitud.');
+              } finally {
+                setLoading(false);
+              }
             }}
           >
             <label className="lex-label">
               Nombre
-              <input className="lex-input" required />
+              <input className="lex-input" value={nombre} onChange={(event) => setNombre(event.target.value)} required />
             </label>
             <label className="lex-label">
               Teléfono
-              <input className="lex-input" required />
+              <input className="lex-input" value={telefono} onChange={(event) => setTelefono(event.target.value)} required />
             </label>
             <label className="lex-label">
               Correo
-              <input type="email" className="lex-input" required />
+              <input type="email" className="lex-input" value={correo} onChange={(event) => setCorreo(event.target.value)} required />
             </label>
             <label className="lex-label">
               Mensaje
-              <textarea className="lex-input" rows={5} required />
+              <textarea className="lex-input" rows={5} value={mensaje} onChange={(event) => setMensaje(event.target.value)} required />
             </label>
-            <Button type="submit">Enviar solicitud</Button>
+            <Button type="submit" disabled={loading}>{loading ? 'Enviando...' : 'Enviar solicitud'}</Button>
             {enviado ? <p className="lex-notice-success">Mensaje enviado correctamente.</p> : null}
+            {error ? <p className="lex-notice-error">{error}</p> : null}
           </form>
         </Card>
 
