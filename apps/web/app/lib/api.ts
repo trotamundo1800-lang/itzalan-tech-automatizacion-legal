@@ -30,6 +30,14 @@ function clearExpiredSession() {
   window.dispatchEvent(new Event('authChange'));
 }
 
+function redirectToLogin() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.location.replace('/login');
+}
+
 async function refreshSession() {
   if (typeof window === 'undefined') {
     return null;
@@ -50,12 +58,14 @@ async function refreshSession() {
 
   if (!response.ok) {
     clearExpiredSession();
+    redirectToLogin();
     return null;
   }
 
   const data = (await response.json().catch(() => null)) as { accessToken?: string; refreshToken?: string } | null;
   if (!data?.accessToken || !data.refreshToken) {
     clearExpiredSession();
+    redirectToLogin();
     return null;
   }
 
@@ -80,6 +90,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     return { Authorization: `Bearer ${refreshedToken}` };
   }
 
+  redirectToLogin();
   throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
 }
 
@@ -101,6 +112,7 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
 
   const refreshedToken = await refreshSession();
   if (!refreshedToken) {
+    redirectToLogin();
     return response;
   }
 
