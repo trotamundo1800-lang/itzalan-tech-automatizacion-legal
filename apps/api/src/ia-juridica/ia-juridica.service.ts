@@ -18,6 +18,7 @@ import { AiContextSource } from './ai-context-source.entity';
 import { AiMessage, AiMode } from './ai-message.entity';
 import { IaProviderService } from './ia-provider.service';
 import { SubscriptionQuotaService } from '../subscriptions/subscription-quota.service';
+import { AiTokenService } from '../subscriptions/ai-token.service';
 
 type AssistantTurn = {
   modo: AiMode;
@@ -48,6 +49,7 @@ export class IaJuridicaService {
     private readonly aiContextSourceRepository: Repository<AiContextSource>,
     private readonly iaProviderService: IaProviderService,
     private readonly subscriptionQuotaService: SubscriptionQuotaService,
+    private readonly aiTokenService: AiTokenService,
   ) {
     // noop
   }
@@ -378,6 +380,10 @@ export class IaJuridicaService {
 
   async sendMessage(id: string, userId: string, payload: SendMessageDto) {
     const conversation = await this.findConversationForUser(id, userId);
+    
+    // Validar tokens disponibles antes de procesar
+    await this.aiTokenService.assertTokensAvailable(userId, 'conversation');
+    
     const currentMessages = await this.findMessagesByConversation(conversation.id);
     const turn = await this.buildAssistantTurn({
       consulta: payload.pregunta,
@@ -400,7 +406,21 @@ export class IaJuridicaService {
       proyeccionCaso: turn.proyeccionCaso,
     });
 
-    await this.aiMessageRepository.save(message);
+    const savedMessage = await this.aiMessageRepository.save(message);
+    
+    // Registrar consumo de tokens después de procesar
+    await this.aiTokenService.consumeTokens(
+      userId,
+      'conversation',
+      750, // TOKEN_COST para conversation
+      turn.modo,
+      this.iaProviderService.getMode() === 'anthropic' ? 'claude-sonnet-4-20250514' : 'gpt-4o-mini',
+      `Conversacion: ${payload.pregunta.substring(0, 100)}...`,
+      undefined,
+      conversation.expedienteId ?? undefined,
+      conversation.id,
+    );
+    
     conversation.contextoJuridico = turn.contextoAplicado;
     await this.aiConversationRepository.save(conversation);
 
@@ -435,6 +455,7 @@ export class IaJuridicaService {
 
   async virtualAssistant(userId: string, payload: VirtualAssistantDto) {
     await this.ensureUserExists(userId);
+    await this.aiTokenService.assertTokensAvailable(userId, 'consultation');
 
     const tipoAnalisis = payload.tipoAnalisis ?? 'analisis_juridico';
     const turn = await this.buildAssistantTurn({
@@ -474,6 +495,18 @@ export class IaJuridicaService {
       proyeccionCaso: turn.proyeccionCaso,
     });
     await this.aiMessageRepository.save(message);
+    
+    await this.aiTokenService.consumeTokens(
+      userId,
+      'consultation',
+      500,
+      openAiResult.mode,
+      this.iaProviderService.getMode() === 'anthropic' ? 'claude-sonnet-4-20250514' : 'gpt-4o-mini',
+      `Consulta ${tipoAnalisis}: ${payload.consulta.substring(0, 100)}...`,
+      undefined,
+      undefined,
+      savedConversation.id,
+    );
 
     return {
       modo: openAiResult.mode,
@@ -516,7 +549,9 @@ export class IaJuridicaService {
 
   async analyzeDocument(userId: string, payload: AnalyzeDocumentDto) {
     await this.ensureUserExists(userId);
+    await this.aiTokenService.assertTokensAvailable(userId, 'document_analysis');
     let content = payload.contenido?.trim() || '';
+    let documentId: string | undefined;
 
     if (payload.documentoId) {
       const doc = await this.legalDocumentRepository.findOne({ where: { id: payload.documentoId } });
@@ -525,6 +560,7 @@ export class IaJuridicaService {
       }
 
       content = doc.contenidoTexto;
+      documentId = doc.id;
     }
 
     if (content.length < 20) {
@@ -544,6 +580,16 @@ export class IaJuridicaService {
       `Contenido:\n${content}\n\nInstruccion: ${question}`,
       fallback,
     );
+    
+    await this.aiTokenService.consumeTokens(
+      userId,
+      'document_analysis',
+      1500,
+      analysisResult.mode,
+      this.iaProviderService.getMode() === 'anthropic' ? 'claude-sonnet-4-20250514' : 'gpt-4o-mini',
+      `Analisis: ${question.substring(0, 100)}...`,
+      documentId,
+    );
 
     return {
       modo: analysisResult.mode,
@@ -559,6 +605,7 @@ export class IaJuridicaService {
 
   async generateDraft(userId: string, payload: GenerateDraftDto) {
     await this.ensureUserExists(userId);
+    await this.aiTokenService.assertTokensAvailable(userId, 'contract_generation');
     const fallback = [
       `Borrador inicial de ${payload.tipoBorrador}.`,
       `Hechos relevantes: ${payload.hechos}`,
@@ -572,6 +619,15 @@ export class IaJuridicaService {
       `Genera un borrador de tipo ${payload.tipoBorrador} con estos hechos: ${payload.hechos}. Objetivo: ${payload.objetivo}.`,
       fallback,
     );
+    
+    await this.aiTokenService.consumeTokens(
+      userId,
+      'contract_generation',
+      3000,
+      draftResult.mode,
+      this.iaProviderService.getMode() === 'anthropic' ? 'claude-sonnet-4-20250514' : 'gpt-4o-mini',
+      `Generacion de ${payload.tipoBorrador}: ${payload.objetivo.substring(0, 100)}...`,
+    );
 
     return {
       modo: draftResult.mode,
@@ -582,6 +638,7 @@ export class IaJuridicaService {
 
   async summarizeExpediente(userId: string, payload: ExpedienteSummaryDto) {
     await this.ensureUserExists(userId);
+    await this.aiTokenService.assertTokensAvailable(userId, 'expediente_summary');
     const expediente = await this.expedienteRepository.findOne({
       where: { id: payload.expedienteId },
       relations: { cliente: true },
@@ -603,6 +660,17 @@ export class IaJuridicaService {
       'Eres un asistente juridico que resume expedientes de forma breve y accionable.',
       `Resume este expediente y sugiere proximos pasos:\n${fallback}`,
       fallback,
+    );
+    
+    await this.aiTokenService.consumeTokens(
+      userId,
+      'expediente_summary',
+      2000,
+      summaryResult.mode,
+      this.iaProviderService.getMode() === 'anthropic' ? 'claude-sonnet-4-20250514' : 'gpt-4o-mini',
+      `Resumen de expediente: ${expediente.titulo.substring(0, 100)}...`,
+      undefined,
+      expediente.id,
     );
 
     return {
