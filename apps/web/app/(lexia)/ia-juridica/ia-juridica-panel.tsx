@@ -1,10 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { apiFetch } from '../../lib/api';
-import { getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
-
-const IA_API_PREFIX = '/api/ia-juridica';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders, IA_JURIDICA_API_PREFIX } from '../../lib/api';
 
 type DocumentoOption = {
   id: string;
@@ -150,7 +147,7 @@ export function IaJuridicaPanel() {
     setConversationError('');
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/conversations`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/conversations`, {
         headers: await getAuthHeaders(),
       });
 
@@ -164,7 +161,7 @@ export function IaJuridicaPanel() {
 
       const preferredId = selectConversationId ?? selectedConversation?.id;
       if (preferredId) {
-        const detailResponse = await apiFetch(`${IA_API_PREFIX}/conversations/${preferredId}`, {
+        const detailResponse = await apiFetch(`${IA_JURIDICA_API_PREFIX}/conversations/${preferredId}`, {
           headers: await getAuthHeaders(),
         });
 
@@ -235,7 +232,7 @@ export function IaJuridicaPanel() {
     setCreateConversationError('');
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/conversations`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/conversations`, {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
@@ -276,7 +273,7 @@ export function IaJuridicaPanel() {
     setConversationError('');
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/conversations/${conversationId}`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/conversations/${conversationId}`, {
         headers: await getAuthHeaders(),
       });
 
@@ -308,7 +305,7 @@ export function IaJuridicaPanel() {
     setMessageError('');
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/conversations/${selectedConversation.id}/messages`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/conversations/${selectedConversation.id}/messages`, {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
@@ -344,7 +341,7 @@ export function IaJuridicaPanel() {
     setAssociateError('');
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/conversations/${selectedConversation.id}/associations`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/conversations/${selectedConversation.id}/associations`, {
         method: 'PATCH',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
@@ -375,7 +372,7 @@ export function IaJuridicaPanel() {
     setAssistantResult(null);
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/consultar`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/consultar`, {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
@@ -417,7 +414,7 @@ export function IaJuridicaPanel() {
         pregunta: analysisForm.pregunta.trim() || undefined,
       };
 
-      const response = await apiFetch(`${IA_API_PREFIX}/analizar-documento`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/analizar-documento`, {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify(payload),
@@ -450,7 +447,7 @@ export function IaJuridicaPanel() {
     setDraftResult(null);
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/generar-borrador`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/generar-borrador`, {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
@@ -480,7 +477,7 @@ export function IaJuridicaPanel() {
     setSummaryResult(null);
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/resumen-expediente`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/resumen-expediente`, {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({ expedienteId: summaryExpedienteId || undefined }),

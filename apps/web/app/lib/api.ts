@@ -1,6 +1,7 @@
 const isProduction = process.env.NODE_ENV === 'production';
 
 export const API_BASE_URL = isProduction ? '/api' : (process.env.NEXT_PUBLIC_API_URL ?? '/api');
+export const IA_JURIDICA_API_PREFIX = '/api/ia-juridica';
 
 export function resolveApiUrl(path: string) {
   const rawPath = path.startsWith('/') ? path : `/${path}`;

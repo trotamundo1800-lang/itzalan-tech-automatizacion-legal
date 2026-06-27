@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { BellRing, Bot, CalendarClock, FilePlus2, Scale, TriangleAlert } from 'lucide-react';
 import { Badge, Card, InfoBand, StatCard } from '../../components/ui';
-import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../lib/api';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders, IA_JURIDICA_API_PREFIX } from '../lib/api';
 
 type DashboardClient = { id: string; nombre: string };
 type DashboardExpediente = { id: string; numeroInterno: string; estado: string; tipo: string; clienteId?: string; proximaAudiencia?: string };
@@ -39,7 +39,7 @@ export default function DashboardPage() {
           apiFetch('/expedientes', { headers }),
           apiFetch('/documentos', { headers }),
           apiFetch('/agenda', { headers }),
-          apiFetch('/api/ia-juridica/historial?limit=100', { headers }),
+          apiFetch(`${IA_JURIDICA_API_PREFIX}/historial?limit=100`, { headers }),
         ]);
 
         const loadedClients = (await clientsResponse.json()) as DashboardClient[];

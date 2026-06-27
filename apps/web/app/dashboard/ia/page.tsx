@@ -3,10 +3,8 @@
 import { Bot, Brain, LoaderCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, SectionHeader, Select, Textarea } from '../../../components/ui';
-import { apiFetch, getAuthHeaders as getSessionAuthHeaders } from '../../lib/api';
+import { apiFetch, getAuthHeaders as getSessionAuthHeaders, IA_JURIDICA_API_PREFIX } from '../../lib/api';
 import type { IaAnalysisType } from '../../../types';
-
-const IA_API_PREFIX = '/api/ia-juridica';
 
 const analysisTypes: IaAnalysisType[] = [
   'Análisis legal',
@@ -56,7 +54,7 @@ export default function DashboardIaPage() {
   async function refreshHistory() {
     setError('');
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/historial?limit=25`, { headers: await getAuthHeaders() });
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/historial?limit=25`, { headers: await getAuthHeaders() });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         throw new Error(parseApiError(data, 'No se pudo cargar historial IA.'));
@@ -89,7 +87,7 @@ export default function DashboardIaPage() {
     setLoading(true);
 
     try {
-      const response = await apiFetch(`${IA_API_PREFIX}/consultar`, {
+      const response = await apiFetch(`${IA_JURIDICA_API_PREFIX}/consultar`, {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({

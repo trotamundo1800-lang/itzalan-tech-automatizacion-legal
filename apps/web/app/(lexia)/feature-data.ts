@@ -1,3 +1,5 @@
+import { IA_JURIDICA_API_PREFIX } from '../lib/api';
+
 export type FeatureModule = {
   slug: 'contratos' | 'agenda' | 'analisis' | 'clientes' | 'expedientes' | 'documentos' | 'ia-juridica' | 'biblioteca';
   title: string;
@@ -189,7 +191,7 @@ export const featureModules: Record<FeatureModule['slug'], FeatureModule> = {
     ],
     backend: {
       status: 'planned',
-      endpoint: '/api/ia-juridica/analizar-documento',
+      endpoint: `${IA_JURIDICA_API_PREFIX}/analizar-documento`,
       method: 'POST',
     },
   },

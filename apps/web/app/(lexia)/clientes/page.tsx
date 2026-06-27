@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { FeatureShell } from '../feature-shell';
 import { featureModules } from '../feature-data';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, IA_JURIDICA_API_PREFIX } from '../../lib/api';
 
 type Client = {
   id: string;
@@ -115,7 +115,7 @@ export default function ClientesPage() {
 
       const iaEntries = await Promise.all(
         data.map(async (client) => {
-          const iaResponse = await apiFetch(`/api/ia-juridica/conversations?clienteId=${client.id}`, {
+          const iaResponse = await apiFetch(`${IA_JURIDICA_API_PREFIX}/conversations?clienteId=${client.id}`, {
             headers: getAuthHeaders(),
           });
 
