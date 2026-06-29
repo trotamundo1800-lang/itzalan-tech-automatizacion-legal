@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from './src/app.module';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -17,6 +16,7 @@ beforeAll(async () => {
   process.env.DB_SYNCHRONIZE = 'true';
   process.env.DB_MIGRATIONS_RUN = 'false';
 
+  const { AppModule } = await import('./src/app.module');
   const app = await NestFactory.create(AppModule, { logger: false });
   await app.init();
   globalThis.__E2E_APP__ = app;
