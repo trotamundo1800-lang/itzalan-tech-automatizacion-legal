@@ -4,8 +4,29 @@ export const baseUrl = 'http://localhost:3001';
 export const e2eTimeout = 20000;
 export const missingDraftId = '00000000-0000-0000-0000-000000000000';
 
-export function createApiClient(app: string = baseUrl) {
-  return request(app);
+type E2ETestApp = {
+  getHttpServer(): unknown;
+};
+
+function getInitializedApp() {
+  const app = (globalThis as { __E2E_APP__?: E2ETestApp }).__E2E_APP__;
+  if (!app) {
+    throw new Error('E2E app no inicializada. Verifica jest.setup.ts');
+  }
+
+  return app;
+}
+
+export function createApiClient(_app: string = baseUrl) {
+  return {
+    get: (url: string) => request(getInitializedApp().getHttpServer()).get(url),
+    post: (url: string) => request(getInitializedApp().getHttpServer()).post(url),
+    put: (url: string) => request(getInitializedApp().getHttpServer()).put(url),
+    patch: (url: string) => request(getInitializedApp().getHttpServer()).patch(url),
+    delete: (url: string) => request(getInitializedApp().getHttpServer()).delete(url),
+    head: (url: string) => request(getInitializedApp().getHttpServer()).head(url),
+    options: (url: string) => request(getInitializedApp().getHttpServer()).options(url),
+  };
 }
 
 export function buildAuthUser(
