@@ -244,7 +244,7 @@ jobs:
   notify:
     needs: [lint, build, test, security]
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ always() && secrets.SLACK_WEBHOOK != '' }}
     steps:
       - name: Determine status
         id: status
@@ -260,8 +260,9 @@ jobs:
 
       - name: Slack Notification
         uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
           payload: |
             {
               "text": "ITZALAN TECH CI/CD Pipeline",
