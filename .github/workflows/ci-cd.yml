@@ -111,8 +111,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Check Snyk token availability
+        id: snyk_token
+        run: |
+          if [ -n "${{ secrets.SNYK_TOKEN }}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run Snyk scan
-        if: ${{ secrets.SNYK_TOKEN != '' }}
+        if: steps.snyk_token.outputs.available == 'true'
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -120,7 +129,7 @@ jobs:
           args: --all-projects --severity-threshold=high
 
       - name: Skip Snyk scan (missing token)
-        if: ${{ secrets.SNYK_TOKEN == '' }}
+        if: steps.snyk_token.outputs.available == 'false'
         run: echo "Skipping Snyk scan because SNYK_TOKEN is not configured."
 
       - name: Run Trivy scan
