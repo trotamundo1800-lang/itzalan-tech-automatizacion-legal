@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'itzalan-api',
-      cwd: '/opt/itzalan',
+      cwd: 'C:\\Users\\ciade\\Downloads\\ITZALAN TECH – AUTOMATIZACIÓN LEGAL',
       script: 'node',
       args: 'apps/api/dist/main.js',
       instances: 1,
@@ -23,7 +23,7 @@ module.exports = {
     },
     {
       name: 'itzalan-web',
-      cwd: '/opt/itzalan',
+      cwd: 'C:\\Users\\ciade\\Downloads\\ITZALAN TECH – AUTOMATIZACIÓN LEGAL',
       script: 'npm',
       args: '--workspace @itzalan/web run start -- -p 3000 -H 0.0.0.0',
       instances: 1,
