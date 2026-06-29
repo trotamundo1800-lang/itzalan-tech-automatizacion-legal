@@ -34,9 +34,9 @@ export default function ManualPage() {
         <section className="space-y-3">
           <h3 className="text-xl font-semibold">1. Apertura - 2 minutos</h3>
           <p className="text-sm leading-6 text-slate-300">
-            "Hoy los abogados pierden mucho tiempo en tareas repetitivas: buscar formatos, ordenar expedientes,
+            &quot;Hoy los abogados pierden mucho tiempo en tareas repetitivas: buscar formatos, ordenar expedientes,
             redactar documentos, revisar informacion de clientes, controlar audiencias y responder consultas basicas.
-            La plataforma nace para centralizar esas tareas en una sola experiencia profesional."
+            La plataforma nace para centralizar esas tareas en una sola experiencia profesional.&quot;
           </p>
           <ol className="list-decimal space-y-1 pl-5 text-sm leading-6 text-slate-300">
             <li>Plataforma para abogados.</li>
@@ -58,8 +58,8 @@ export default function ManualPage() {
             <li>Investigacion juridica lenta.</li>
           </ol>
           <p className="text-sm leading-6 text-slate-200 font-medium">
-            "La plataforma no reemplaza al abogado; le da una oficina digital inteligente para trabajar mas rapido y con mas
-            control."
+            &quot;La plataforma no reemplaza al abogado; le da una oficina digital inteligente para trabajar mas rapido y con mas
+            control.&quot;
           </p>
         </section>
 
@@ -95,9 +95,9 @@ export default function ManualPage() {
         <section className="space-y-3">
           <h3 className="text-xl font-semibold">4. ROI estimado - 3 minutos</h3>
           <p className="text-sm leading-6 text-slate-300">
-            "Si un abogado ahorra entre 30 y 60 minutos diarios en redaccion, busqueda y organizacion, puede recuperar
+            &quot;Si un abogado ahorra entre 30 y 60 minutos diarios en redaccion, busqueda y organizacion, puede recuperar
             varias horas semanales. Eso se traduce en mas casos atendidos, mejor seguimiento y mejor experiencia para
-            el cliente."
+            el cliente.&quot;
           </p>
           <ol className="list-decimal space-y-1 pl-5 text-sm leading-6 text-slate-300">
             <li>Ahorro de tiempo.</li>
@@ -117,8 +117,8 @@ export default function ManualPage() {
             <li>Aceptaria participar como usuario piloto?</li>
           </ol>
           <p className="text-sm leading-6 text-slate-200 font-medium">
-            "Estamos abriendo un grupo piloto limitado para abogados y despachos que quieran probar la plataforma,
-            darnos retroalimentacion y acceder a condiciones preferenciales de lanzamiento."
+            &quot;Estamos abriendo un grupo piloto limitado para abogados y despachos que quieran probar la plataforma,
+            darnos retroalimentacion y acceder a condiciones preferenciales de lanzamiento.&quot;
           </p>
         </section>
 
