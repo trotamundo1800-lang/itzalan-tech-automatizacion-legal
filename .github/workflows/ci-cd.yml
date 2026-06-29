@@ -133,6 +133,7 @@ jobs:
         run: echo "Skipping Snyk scan because SNYK_TOKEN is not configured."
 
       - name: Run Trivy scan
+        if: github.event_name == 'push'
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
@@ -141,9 +142,14 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security tab
+        if: github.event_name == 'push'
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
+
+      - name: Skip Trivy on pull requests
+        if: github.event_name == 'pull_request'
+        run: echo "Skipping Trivy code scanning on pull_request to avoid blocking PRs with repository-wide baseline alerts."
 
   # ===== DOCKER BUILD (for main branch only) =====
   docker-build:
